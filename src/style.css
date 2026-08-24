@@ -138,6 +138,123 @@ body:has(#scene) {
   inset: 0;
 }
 
+/* Candle smoke / cup steam — anchored to a spot picked out of the
+   foreground artwork itself (see Ambiance.emitters). Purely decorative
+   CSS wisps, no canvas/engine cost. */
+.emitter {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+.emitter .wisp {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  filter: blur(3px);
+  opacity: 0;
+  transform: translate(-50%, 0) scale(0.6);
+}
+.emitter.smoke .wisp {
+  background: radial-gradient(circle, rgba(210, 210, 210, 0.5), rgba(210, 210, 210, 0));
+  animation: wisp-rise-smoke 5s ease-in infinite;
+}
+.emitter.steam .wisp {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0));
+  animation: wisp-rise-steam 3.2s ease-in infinite;
+}
+.emitter .wisp:nth-child(1) {
+  animation-delay: 0s;
+}
+.emitter .wisp:nth-child(2) {
+  left: 6px;
+  animation-delay: -1.7s;
+}
+.emitter .wisp:nth-child(3) {
+  left: -6px;
+  animation-delay: -3.4s;
+}
+@keyframes wisp-rise-smoke {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(0.6);
+  }
+  20% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -90px) scale(2.2) translateX(14px);
+  }
+}
+@keyframes wisp-rise-steam {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(0.6);
+  }
+  20% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -55px) scale(1.6) translateX(8px);
+  }
+}
+
+/* Candle flicker — a tight, plain (no blend-mode) warm halo centered right
+   on the flame. Irregular keyframe stops fake an organic flicker cheaply,
+   no JS randomness needed. */
+.emitter.flicker .glow {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(255, 176, 92, 0.55) 0%, rgba(255, 176, 92, 0.18) 45%, rgba(255, 176, 92, 0) 75%);
+  animation: candle-flicker 2.6s ease-in-out infinite;
+}
+@keyframes candle-flicker {
+  0%,
+  100% {
+    opacity: 0.85;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  8% {
+    opacity: 0.65;
+    transform: translate(-50%, -50%) scale(0.92);
+  }
+  19% {
+    opacity: 0.95;
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+  33% {
+    opacity: 0.7;
+    transform: translate(-50%, -50%) scale(0.96);
+  }
+  47% {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(1.02);
+  }
+  61% {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  74% {
+    opacity: 0.95;
+    transform: translate(-50%, -50%) scale(1.06);
+  }
+  88% {
+    opacity: 0.75;
+    transform: translate(-50%, -50%) scale(0.97);
+  }
+}
+
 #lightning-flash {
   position: absolute;
   inset: 0;
@@ -153,9 +270,7 @@ body:has(#scene) {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    radial-gradient(ellipse at 50% 100%, rgba(255, 176, 92, 0.35) 0%, rgba(255, 176, 92, 0) 55%),
-    radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0) 40%, rgba(5, 7, 13, 0.85) 100%);
+  background: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0) 40%, rgba(5, 7, 13, 0.85) 100%);
 }
 
 /* Storm-intensity feedback — only shown while actively dragging */

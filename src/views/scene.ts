@@ -8,6 +8,7 @@ import { setupFullscreen } from '../ui/fullscreen';
 import { setupCast } from '../ui/cast';
 import { setupSleepTimer } from '../ui/timer';
 import { setupClosedEyes } from '../ui/closedEyes';
+import { setupEmitters } from '../ui/emitters';
 import { layerStyle } from '../utils/layerStyle';
 
 function el<T extends HTMLElement>(id: string): T {
@@ -27,6 +28,18 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
       <div id="foreground" class="bg-layer" style="${ambiance.images.foreground ? layerStyle(ambiance.skyColors[1], ambiance.images.foreground) : ''}"></div>
       <div id="lightning-flash"></div>
       <div id="cocoon-vignette"></div>
+      ${(ambiance.emitters ?? [])
+        .map((e) =>
+          e.type === 'flicker'
+            ? `<div class="emitter flicker"><span class="glow"></span></div>`
+            : `
+        <div class="emitter ${e.type}">
+          <span class="wisp"></span>
+          <span class="wisp"></span>
+          <span class="wisp"></span>
+        </div>`,
+        )
+        .join('')}
       <div id="intensity-gauge"><div id="intensity-gauge-fill"></div></div>
       <div id="caption">${ambiance.caption}</div>
 
@@ -89,6 +102,8 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
   const menu = setupMenu(menuButton, menuDropdown);
   const fullscreen = setupFullscreen(menuFullscreen, menu.close);
   const cast = setupCast(castButton);
+  const emitterNodes = Array.from(document.querySelectorAll<HTMLElement>('.emitter'));
+  const emitters = setupEmitters(emitterNodes, ambiance.images.foreground, ambiance);
 
   let width = 0;
   let height = 0;
@@ -247,6 +262,7 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
     menu.dispose();
     fullscreen.dispose();
     cast.dispose();
+    emitters.dispose();
     closedEyes.dispose();
     sleepTimer.dispose();
   };
