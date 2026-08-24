@@ -236,20 +236,52 @@ body:has(#scene) {
   gap: 0.5rem;
 }
 
-#timer-select {
+#timer-wrapper {
+  position: relative;
+  display: none;
+}
+#timer-button {
   font-family: inherit;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+  line-height: 1;
   padding: 0.4rem 0.7rem;
   border-radius: 999px;
   border: 1px solid rgba(255, 230, 194, 0.4);
   background: rgba(5, 7, 13, 0.4);
   color: #ffe6c2;
   cursor: pointer;
-  display: none;
 }
-#timer-select option {
-  background: #05070d;
+#timer-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  min-width: 9.5rem;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(255, 230, 194, 0.4);
+  background: rgba(5, 7, 13, 0.92);
+  backdrop-filter: blur(6px);
+  z-index: 6;
+}
+#timer-dropdown.open {
+  display: flex;
+}
+#timer-dropdown button {
+  font-family: inherit;
+  font-size: 1rem;
+  text-align: left;
+  padding: 0.65rem 0.9rem;
+  border: none;
+  background: none;
   color: #ffe6c2;
+  cursor: pointer;
+}
+#timer-dropdown button:hover,
+#timer-dropdown button:focus-visible,
+#timer-dropdown button.selected {
+  background: rgba(255, 230, 194, 0.12);
 }
 
 #timer-remaining {
@@ -258,18 +290,6 @@ body:has(#scene) {
   color: #ffe6c2;
   opacity: 0.75;
   white-space: nowrap;
-  display: none;
-}
-
-#cast-button {
-  font-family: inherit;
-  font-size: 0.9rem;
-  padding: 0.4rem 0.9rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 230, 194, 0.4);
-  background: rgba(5, 7, 13, 0.4);
-  color: #ffe6c2;
-  cursor: pointer;
   display: none;
 }
 

@@ -34,21 +34,24 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
       <div id="caption">${ambiance.caption}</div>
 
       <div id="controls">
-        <select id="timer-select" aria-label="Minuterie">
-          <option value="0">Pas de minuterie</option>
-          <option value="1">1 min</option>
-          <option value="15">15 min</option>
-          <option value="30">30 min</option>
-          <option value="45">45 min</option>
-          <option value="60">60 min</option>
-        </select>
-        <button id="cast-button" type="button">📺 </button>
-        <span id="timer-remaining" aria-live="polite"></span>
+        <div id="timer-wrapper">
+          <span id="timer-remaining" aria-live="polite"></span>
+          <button id="timer-button" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Minuterie">⏱</button>
+          <div id="timer-dropdown" role="menu">
+            <button type="button" role="menuitem" data-minutes="0">Pas de minuterie</button>
+            <button type="button" role="menuitem" data-minutes="1">1 min</button>
+            <button type="button" role="menuitem" data-minutes="15">15 min</button>
+            <button type="button" role="menuitem" data-minutes="30">30 min</button>
+            <button type="button" role="menuitem" data-minutes="45">45 min</button>
+            <button type="button" role="menuitem" data-minutes="60">60 min</button>
+          </div>
+        </div>
         <div id="menu-wrapper">
           <button id="menu-button" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Menu">⋮</button>
           <div id="menu-dropdown" role="menu">
             <button id="menu-eyes" type="button" role="menuitem">🌙 Fermer les yeux</button>
             <button id="menu-fullscreen" type="button" role="menuitem">⛶ Plein écran</button>
+            <button id="cast-button" type="button">📺 Caster</button>
             <a id="menu-ambiances" href="#/" role="menuitem">🏠 Ambiances</a>
           </div>
         </div>
@@ -72,7 +75,9 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
   const flashEl = el<HTMLElement>('lightning-flash');
   const startOverlay = el<HTMLElement>('start-overlay');
   const startButton = el<HTMLButtonElement>('start-button');
-  const timerSelect = el<HTMLSelectElement>('timer-select');
+  const timerWrapper = el<HTMLElement>('timer-wrapper');
+  const timerButton = el<HTMLButtonElement>('timer-button');
+  const timerDropdown = el<HTMLElement>('timer-dropdown');
   const timerRemaining = el<HTMLElement>('timer-remaining');
   const intensityGauge = el<HTMLElement>('intensity-gauge');
   const intensityGaugeFill = el<HTMLElement>('intensity-gauge-fill');
@@ -124,8 +129,7 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
 
   function startExperience(): void {
     startOverlay.style.display = 'none';
-    timerSelect.style.display = 'inline-block';
-    if (cast.supported) castButton.style.display = 'inline-block';
+    timerWrapper.style.display = 'inline-block';
 
     audio = new AudioEngine();
     if (ambiance.sounds.accent) void audio.loadAccent(ambiance.sounds.accent);
@@ -159,7 +163,7 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
     },
   );
 
-  const sleepTimer = setupSleepTimer(timerSelect, timerRemaining, () => location.reload());
+  const sleepTimer = setupSleepTimer(timerButton, timerDropdown, timerRemaining, () => location.reload());
 
   // ---- Animation loop ----
   function tick(timestamp: number): void {
@@ -187,7 +191,7 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
   let gaugeHideTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   function isInteractiveTarget(target: EventTarget | null): boolean {
-    return !!(target as HTMLElement | null)?.closest?.('button, select, a');
+    return !!(target as HTMLElement | null)?.closest?.('button, a');
   }
 
   function onPointerDown(e: PointerEvent): void {
