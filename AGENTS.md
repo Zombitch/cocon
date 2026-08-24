@@ -31,16 +31,16 @@ No runtime dependencies — everything is procedural, no looping videos.
     ├── audio/
     │   └── AudioManager.ts      # sound loops (addLoop/setLoopVolume) and spatialized one-shots (play)
     ├── effects/
-    │   ├── Rain.ts              # rain particles driven by intensity + wind
+    │   ├── Condensation.ts      # window fog + sliding condensation drops, driven by intensity + wind
     │   └── Lightning.ts         # branching fractal lightning + full-screen flash
     └── scenes/
         ├── Scene.ts             # common interface: update(dt), render(ctx), resize(w,h)
-        └── CabinScene.ts        # 🌲 cabin: composes background + effects + window frame + fireplace glow
+        └── CabinScene.ts        # 🌲 cabin: close-to-glass view, composes background + effects + window frame + sill + fireplace glow
 
 ### Key principles
 
 1. **A cocoon = a Scene composing Effects.** Effects are independent,
-   reusable bricks (the car scene will reuse Rain/Lightning).
+   reusable bricks (the car scene will reuse Condensation/Lightning).
 2. **Single source of truth for ambiance**: the WeatherDirector. The scene
    reads director.rainLevel / windLevel and syncs effects AND audio volumes.
 3. **The scheduler runs inside the render loop** (no setTimeout) — see main.ts.
@@ -189,6 +189,8 @@ No runtime dependencies — everything is procedural, no looping videos.
 - [ ] Multi-cocoon menu + transitions
 - [ ] TV mode (auto-hidden UI, Cast)
 - [ ] User settings (intensity, volume, fullscreen)
+
+Do not check your modification, never not running or serve the app.
 
 ## Known pitfalls
 

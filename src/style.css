@@ -1,23 +1,353 @@
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
-
-canvas { display: block; width: 100vw; height: 100vh; }
-
-#gate {
-  position: fixed; inset: 0; z-index: 10;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 1rem;
-  background: radial-gradient(ellipse at center, #1a2433, #0a0e14);
-  color: #cfd8e3; font-family: system-ui, sans-serif;
-  text-align: center; padding: 1rem;
+:root {
+  color-scheme: dark;
 }
-#gate h1 { font-weight: 300; font-size: clamp(1.4rem, 4vw, 2.5rem); }
-#gate p { opacity: 0.6; font-size: 0.9rem; }
-#enter {
-  margin-top: 1rem; padding: 0.9rem 2.2rem;
-  border: 1px solid #4a5a6e; border-radius: 999px;
-  background: transparent; color: #cfd8e3;
-  font-size: 1rem; cursor: pointer; transition: all .3s;
+* {
+  box-sizing: border-box;
 }
-#enter:hover { background: #4a5a6e33; }
-.hidden { display: none !important; }
+html,
+body,
+#app {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+body {
+  background: #05070d;
+  font-family: Georgia, 'Times New Roman', serif;
+  color: #ffe6c2;
+}
+
+/* ---------------- Home (ambiance picker) ---------------- */
+
+#page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding: 3rem 1.5rem;
+}
+
+#page h1 {
+  font-weight: normal;
+  font-size: 1.6rem;
+  text-align: center;
+  margin: 0;
+  max-width: 32rem;
+}
+
+#cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1rem;
+  width: 100%;
+  max-width: 60rem;
+}
+
+.card {
+  display: block;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 230, 194, 0.25);
+  padding: 1.5rem 1.25rem;
+  text-decoration: none;
+  color: inherit;
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+.card:hover,
+.card:focus-visible {
+  border-color: rgba(255, 176, 92, 0.7);
+  transform: translateY(-2px);
+}
+
+.card h2 {
+  font-weight: normal;
+  font-size: 1.15rem;
+  margin: 0 0 0.5rem;
+  color: #ffb05c;
+}
+
+.card p {
+  margin: 0;
+  font-size: 0.9rem;
+  opacity: 0.8;
+  line-height: 1.5;
+}
+
+/* ---------------- Scene ---------------- */
+
+body:has(#scene) {
+  overflow: hidden;
+  touch-action: none;
+}
+
+#scene {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* Sky outside the window — the one thing that's actually per-ambiance
+   besides the particles; the warm interior stays the same for all.
+   Colors come in as --sky-0/1/2 custom properties set inline per ambiance. */
+#sky {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, var(--sky-0) 0%, var(--sky-1) 45%, var(--sky-2) 100%);
+}
+
+/* Two optional image layers, purely decorative — never intercept pointer
+   events, the click/drag gestures work through them exactly as if they
+   weren't there. Empty (no image set) means fully transparent, so with
+   neither set the plain sky gradient shows through. #background sits
+   behind the canvas (the weather happens in front of it); #foreground
+   sits in front of it (the weather happens behind it). */
+.bg-layer {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
+#weather-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+#lightning-flash {
+  position: absolute;
+  inset: 0;
+  background: #eef3ff;
+  opacity: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+/* The cozy cocoon: a warm vignette framing the room, contrasted with the
+   cold storm outside the "window" */
+#cocoon-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 100%, rgba(255, 176, 92, 0.35) 0%, rgba(255, 176, 92, 0) 55%),
+    radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0) 40%, rgba(5, 7, 13, 0.85) 100%);
+}
+
+/* Storm-intensity feedback — only shown while actively dragging */
+#intensity-gauge {
+  position: absolute;
+  top: 50%;
+  right: 1.4rem;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 140px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 230, 194, 0.25);
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  z-index: 4;
+}
+#intensity-gauge.visible {
+  opacity: 0.9;
+}
+#intensity-gauge-fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 50%;
+  background: linear-gradient(180deg, #ffb05c, #eaf2ff);
+}
+
+#caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 6vh;
+  text-align: center;
+  color: #ffe6c2;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
+  font-size: 1.15rem;
+  letter-spacing: 0.04em;
+  padding: 0 1.5rem;
+  pointer-events: none;
+}
+
+#start-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2rem;
+  background: rgba(5, 7, 13, 0.88);
+  color: #ffe6c2;
+  text-align: center;
+  padding: 2rem;
+}
+
+#start-overlay h1 {
+  font-weight: normal;
+  font-size: 1.6rem;
+  margin: 0;
+  max-width: 32rem;
+}
+
+#start-overlay p {
+  font-size: 0.95rem;
+  opacity: 0.75;
+  margin: 0;
+  max-width: 28rem;
+}
+
+#start-button {
+  font-family: inherit;
+  font-size: 1.05rem;
+  padding: 0.75rem 1.75rem;
+  border-radius: 999px;
+  border: 1px solid #ffb05c;
+  background: rgba(255, 176, 92, 0.12);
+  color: #ffe6c2;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+#start-button:hover {
+  background: rgba(255, 176, 92, 0.28);
+}
+
+#controls {
+  position: absolute;
+  top: 1.2rem;
+  right: 1.2rem;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+#timer-select {
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 230, 194, 0.4);
+  background: rgba(5, 7, 13, 0.4);
+  color: #ffe6c2;
+  cursor: pointer;
+  display: none;
+}
+#timer-select option {
+  background: #05070d;
+  color: #ffe6c2;
+}
+
+#timer-remaining {
+  font-family: inherit;
+  font-size: 0.8rem;
+  color: #ffe6c2;
+  opacity: 0.75;
+  white-space: nowrap;
+  display: none;
+}
+
+#cast-button {
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 230, 194, 0.4);
+  background: rgba(5, 7, 13, 0.4);
+  color: #ffe6c2;
+  cursor: pointer;
+  display: none;
+}
+
+#menu-wrapper {
+  position: relative;
+}
+#menu-button {
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 230, 194, 0.4);
+  background: rgba(5, 7, 13, 0.4);
+  color: #ffe6c2;
+  cursor: pointer;
+}
+#menu-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  min-width: 10rem;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(255, 230, 194, 0.4);
+  background: rgba(5, 7, 13, 0.92);
+  backdrop-filter: blur(6px);
+  z-index: 6;
+}
+#menu-dropdown.open {
+  display: flex;
+}
+#menu-dropdown a,
+#menu-dropdown button {
+  font-family: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  padding: 0.65rem 0.9rem;
+  border: none;
+  background: none;
+  color: #ffe6c2;
+  text-decoration: none;
+  cursor: pointer;
+}
+#menu-dropdown a:hover,
+#menu-dropdown button:hover,
+#menu-dropdown a:focus-visible,
+#menu-dropdown button:focus-visible {
+  background: rgba(255, 230, 194, 0.12);
+}
+
+/* Opaque, sits above everything (including #controls) so nothing is
+   reachable except tapping to exit. */
+#closed-eyes-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  background: #05070d;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+#closed-eyes-overlay.active {
+  display: flex;
+}
+#closed-eyes-hint {
+  color: #ffe6c2;
+  opacity: 0.5;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  text-align: center;
+  padding: 0 2rem;
+  transition: opacity 3s ease 1.5s;
+  pointer-events: none;
+}
+#closed-eyes-hint.faded {
+  opacity: 0;
+}
