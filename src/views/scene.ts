@@ -8,10 +8,7 @@ import { setupFullscreen } from '../ui/fullscreen';
 import { setupCast } from '../ui/cast';
 import { setupSleepTimer } from '../ui/timer';
 import { setupClosedEyes } from '../ui/closedEyes';
-
-function layerStyle(midSkyColor: string, url: string): string {
-  return `background-image: linear-gradient(${midSkyColor}66, ${midSkyColor}66), url('${url}');`;
-}
+import { layerStyle } from '../utils/layerStyle';
 
 function el<T extends HTMLElement>(id: string): T {
   const found = document.getElementById(id);
