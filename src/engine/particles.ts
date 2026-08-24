@@ -1,4 +1,4 @@
-import type { ParticleType } from '../types';
+import type { ParticleType, WindDirection } from '../types';
 
 // 0-0.5 -> calm..rest, 0.5-1 -> rest..wild. 0.5 is the resting default,
 // chosen so every tuned value below matches pre-intensity-control behavior.
@@ -14,6 +14,7 @@ interface Drop {
   speed: number;
   sway: number;
   weight: number; // 0-1, derived from size — thicker/brighter, and louder/lower splash
+  originX: number; // offset from the vanishing point; only used in 'front' direction
 }
 
 interface Ripple {
@@ -48,6 +49,7 @@ const WIND_COUNT = 140;
 
 export class ParticleSystem {
   private type: ParticleType;
+  private direction: WindDirection;
   private width = 0;
   private height = 0;
   private drops: Drop[] = [];
@@ -55,8 +57,9 @@ export class ParticleSystem {
   private snowflakes: Snowflake[] = [];
   private windStreaks: WindStreak[] = [];
 
-  constructor(type: ParticleType) {
+  constructor(type: ParticleType, direction: WindDirection = 'front') {
     this.type = type;
+    this.direction = direction;
   }
 
   resize(width: number, height: number): void {
@@ -75,13 +78,22 @@ export class ParticleSystem {
 
   private makeDrop(): Drop {
     const len = 10 + Math.random() * 18;
+    // 'front': no lean, just a small ambient jitter. 'left'/'right': every
+    // drop leans the same way, only the strength (magnitude) varies.
+    const sway =
+      this.direction === 'left'
+        ? -(8 + Math.random() * 16)
+        : this.direction === 'right'
+          ? 8 + Math.random() * 16
+          : (Math.random() - 0.5) * 8;
     return {
       x: Math.random() * this.width,
       y: Math.random() * this.height,
       len,
       speed: 420 + Math.random() * 380,
-      sway: (Math.random() - 0.5) * 20,
+      sway,
       weight: (len - 10) / 18,
+      originX: (Math.random() - 0.5) * this.width,
     };
   }
 
@@ -140,37 +152,56 @@ export class ParticleSystem {
 
     const speedFactor = lerp3(0.4, 1, 2.5, intensity);
     const windFactor = lerp3(0.15, 1, 4.5, intensity);
+    const isFront = this.direction === 'front';
+    const vpX = this.width / 2;
 
     for (const d of this.drops) {
-      d.y += d.speed * speedFactor * dt;
-      d.x += d.sway * windFactor * dt;
+      // 'front': fake depth — drops swell as they fall and fan out a bit
+      // more near the bottom, instead of leaning sideways. originX is a
+      // full-width spawn offset (like plain random x) — posScale only ever
+      // grows it outward, never compresses it, so the whole width always
+      // has drops, top to bottom.
+      const t = isFront ? Math.max(0, Math.min(1, d.y / this.height)) : 0;
+      const scale = isFront ? 0.35 + t * t * 0.9 : 1;
+      const posScale = isFront ? 1 + t * 0.5 : 1;
 
-      const tailX = d.x - d.sway * windFactor * 0.05;
-      const tailY = d.y - d.len;
+      d.y += d.speed * speedFactor * (isFront ? 0.5 + scale : 1) * dt;
+      if (isFront) {
+        d.x = vpX + d.originX * posScale;
+      } else {
+        d.x += d.sway * windFactor * dt;
+      }
+
+      const drawLen = d.len * scale;
+      const drawWeight = d.weight * scale;
+      const tailX = isFront ? d.x : d.x - d.sway * windFactor * 0.05;
+      const tailY = d.y - drawLen;
 
       ctx.beginPath();
       ctx.moveTo(d.x, d.y);
       ctx.lineTo(tailX, tailY);
-      ctx.strokeStyle = `rgba(190, 215, 255, ${0.1 + d.weight * 0.08})`;
-      ctx.lineWidth = 3 + d.weight * 3;
+      ctx.strokeStyle = `rgba(190, 215, 255, ${0.1 + drawWeight * 0.08})`;
+      ctx.lineWidth = 3 + drawWeight * 3;
       ctx.stroke();
 
       ctx.beginPath();
       ctx.moveTo(d.x, d.y);
       ctx.lineTo(tailX, tailY);
-      ctx.strokeStyle = `rgba(228, 242, 255, ${0.55 + d.weight * 0.3})`;
-      ctx.lineWidth = 1 + d.weight;
+      ctx.strokeStyle = `rgba(228, 242, 255, ${0.55 + drawWeight * 0.3})`;
+      ctx.lineWidth = 1 + drawWeight;
       ctx.stroke();
 
       ctx.beginPath();
-      ctx.arc(d.x, d.y, 1 + d.weight, 0, Math.PI * 2);
+      ctx.arc(d.x, d.y, 1 + drawWeight, 0, Math.PI * 2);
       ctx.fillStyle = 'rgba(235, 247, 255, 0.55)';
       ctx.fill();
 
-      if (d.y > this.height) {
-        if (Math.random() < 0.35) this.spawnRipple(d.x, d.weight);
+      const offscreenX = !isFront && (d.x < -60 || d.x > this.width + 60);
+      if (d.y > this.height || offscreenX) {
+        if (!offscreenX && Math.random() < 0.35) this.spawnRipple(d.x, d.weight);
         d.y = -d.len - Math.random() * 40;
         d.x = Math.random() * this.width;
+        d.originX = (Math.random() - 0.5) * this.width;
       }
     }
   }

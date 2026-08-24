@@ -13,6 +13,7 @@ export const ambiances: Record<string, Ambiance> = {
     cardText: 'Le tambourinement de la pluie sur le toit, à l’abri.',
     caption: 'Restons dans notre cocon, pendant que le temps se déchaîne dehors.',
     particleType: 'rain',
+    windDirection: 'front',
     hasLightning: true,
     skyColors: ['#2a3550', '#131a2c', '#05070d'],
     images: {
@@ -45,6 +46,7 @@ export const ambiances: Record<string, Ambiance> = {
     cardText: 'Une pluie douce, filtrée par les arbres.',
     caption: 'La pluie glisse entre les feuilles, la forêt respire.',
     particleType: 'rain',
+    windDirection: 'front',
     hasLightning: true,
     skyColors: ['#2a3a2e', '#16241a', '#05070d'],
     images: {

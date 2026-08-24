@@ -107,7 +107,7 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
 
   let width = 0;
   let height = 0;
-  const particles = new ParticleSystem(ambiance.particleType);
+  const particles = new ParticleSystem(ambiance.particleType, ambiance.windDirection);
   const condensation = new Condensation();
   const lightning = new LightningEngine(
     (distanceFactor, pan) => audio?.playAccent(distanceFactor, pan),
