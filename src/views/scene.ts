@@ -79,6 +79,7 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
     </div>
   `;
 
+  const sceneEl = el<HTMLElement>('scene');
   const canvas = el<HTMLCanvasElement>('weather-canvas');
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('2D canvas context unavailable');
@@ -109,11 +110,21 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
   let height = 0;
   const particles = new ParticleSystem(ambiance.particleType, ambiance.windDirection);
   const condensation = new Condensation();
+  // Camera shake sells a "close strike" viscerally — pure CSS transform on
+  // the scene root, no canvas cost. Fires once per strike, right as the
+  // bolt appears, independent of the per-frame flash alpha.
+  function triggerShake(): void {
+    sceneEl.classList.remove('lightning-shake');
+    void sceneEl.offsetWidth; // restart the animation even if still running
+    sceneEl.classList.add('lightning-shake');
+  }
+
   const lightning = new LightningEngine(
     (distanceFactor, pan) => audio?.playAccent(distanceFactor, pan),
     (alpha) => {
       flashEl.style.opacity = String(alpha);
     },
+    triggerShake,
   );
 
   function resize(): void {

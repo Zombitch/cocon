@@ -90,10 +90,12 @@ export class LightningEngine {
   private lastStrikeTime = -Infinity;
   private onThunder: (distanceFactor: number, pan: number) => void;
   private onFlash: (alpha: number) => void;
+  private onStrike: () => void;
 
-  constructor(onThunder: (distanceFactor: number, pan: number) => void, onFlash: (alpha: number) => void) {
+  constructor(onThunder: (distanceFactor: number, pan: number) => void, onFlash: (alpha: number) => void, onStrike: () => void) {
     this.onThunder = onThunder;
     this.onFlash = onFlash;
+    this.onStrike = onStrike;
   }
 
   resize(width: number, height: number): void {
@@ -107,6 +109,7 @@ export class LightningEngine {
 
   trigger(): void {
     this.lastStrikeTime = performance.now();
+    this.onStrike();
 
     const x0 = this.width * 0.15 + Math.random() * this.width * 0.7;
     const y0 = 0;

@@ -255,6 +255,42 @@ body:has(#scene) {
   }
 }
 
+/* Camera shake on strike — sells "close lightning" viscerally. Fires once
+   per strike (see triggerShake in scene.ts), independent of the flash's
+   own per-frame alpha decay. Small amplitude (2-4px) so it reads as a jolt,
+   not a glitch. */
+@keyframes lightning-shake {
+  0% {
+    transform: translate(0, 0);
+  }
+  10% {
+    transform: translate(-4px, 2px);
+  }
+  22% {
+    transform: translate(3px, -3px);
+  }
+  36% {
+    transform: translate(-3px, 1px);
+  }
+  52% {
+    transform: translate(2px, -2px);
+  }
+  70% {
+    transform: translate(-1px, 1px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+#scene.lightning-shake {
+  animation: lightning-shake 220ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  #scene.lightning-shake {
+    animation: none;
+  }
+}
+
 #lightning-flash {
   position: absolute;
   inset: 0;
