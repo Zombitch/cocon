@@ -23,6 +23,8 @@ interface Ripple {
   radius: number;
   maxRadius: number;
   alpha: number;
+  maxAlpha: number;
+  spikes: number[]; // angles for the brief splash burst at impact
 }
 
 interface Snowflake {
@@ -119,39 +121,58 @@ export class ParticleSystem {
     };
   }
 
-  // Ripples read as rain hitting the window pane itself, not a puddle along
-  // a ground line — spread across the lower third of the frame instead of
-  // clinging to a thin strip at the very bottom edge. They also shrink/fade
-  // toward the screen's sides: a drop landing dead center (in 'front' mode,
-  // where fanned-out drops converge — right in front of the viewer) keeps
-  // today's baseline size as its ceiling, drops off to either side land
-  // more glancingly. Never bigger than the existing baseline, only smaller.
-  private spawnRipple(x: number, weight: number): void {
-    const centerFactor = 1 - Math.min(1, Math.abs(x - this.width / 2) / (this.width * 0.55));
-    const sizeFactor = 0.55 + 0.45 * centerFactor;
+  // A splash against the glass itself, not a puddle on the ground: a brief
+  // burst of droplets radiating from the impact point, then a plain
+  // circular ring expanding outward. Drawn as a true circle rather than a
+  // squashed ellipse, since we're looking straight at a vertical pane, not
+  // down at an angle onto standing water.
+  private spawnRipple(x: number, y: number, weight: number): void {
+    const maxAlpha = 0.4 + weight * 0.3;
+    const spikeCount = 4 + Math.floor(Math.random() * 3);
+    const spikes: number[] = [];
+    for (let i = 0; i < spikeCount; i++) spikes.push(Math.random() * Math.PI * 2);
     this.ripples.push({
       x,
-      y: this.height * 0.65 + Math.random() * this.height * 0.35,
+      y,
       radius: 1,
-      maxRadius: (14 + weight * 22) * sizeFactor,
-      alpha: (0.5 + weight * 0.2) * (0.65 + 0.35 * centerFactor),
+      maxRadius: 8 + weight * 16,
+      alpha: maxAlpha,
+      maxAlpha,
+      spikes,
     });
-    if (this.ripples.length > 150) this.ripples.shift();
+    if (this.ripples.length > 200) this.ripples.shift();
   }
 
   private updateAndDrawRipples(ctx: CanvasRenderingContext2D, dt: number): void {
     for (let r = this.ripples.length - 1; r >= 0; r--) {
       const rp = this.ripples[r];
-      rp.radius += 60 * dt;
-      rp.alpha -= dt * 1.1;
+      rp.radius += 50 * dt;
+      rp.alpha -= dt * 1.4;
       if (rp.alpha <= 0 || rp.radius >= rp.maxRadius) {
         this.ripples.splice(r, 1);
         continue;
       }
+      const life = rp.alpha / rp.maxAlpha; // 1 at spawn -> 0 at death
+
+      // Splash burst: droplets flick outward and vanish in the first
+      // instant, so the ripple reads as an impact rather than just a ring.
+      if (life > 0.55) {
+        const burstT = 1 - (life - 0.55) / 0.45; // 0 at spawn -> 1 as burst ends
+        const spikeLen = rp.maxRadius * 0.6 * burstT;
+        ctx.strokeStyle = `rgba(225, 240, 255, ${(1 - burstT) * rp.maxAlpha})`;
+        ctx.lineWidth = 1;
+        for (const angle of rp.spikes) {
+          ctx.beginPath();
+          ctx.moveTo(rp.x, rp.y);
+          ctx.lineTo(rp.x + Math.cos(angle) * spikeLen, rp.y + Math.sin(angle) * spikeLen);
+          ctx.stroke();
+        }
+      }
+
       ctx.beginPath();
       ctx.strokeStyle = `rgba(210, 230, 255, ${Math.max(0, rp.alpha)})`;
       ctx.lineWidth = 1;
-      ctx.ellipse(rp.x, rp.y, rp.radius, rp.radius * 0.35, 0, 0, Math.PI * 2);
+      ctx.arc(rp.x, rp.y, rp.radius, 0, Math.PI * 2);
       ctx.stroke();
     }
   }
@@ -186,6 +207,16 @@ export class ParticleSystem {
       const tailX = isFront ? d.x : d.x - d.sway * windFactor * 0.05;
       const tailY = d.y - drawLen;
 
+      // 'front': the drop is hitting a pane of glass right in front of the
+      // viewer, not falling toward a distant ground — so splashes should
+      // happen anywhere along its fall (top, middle, bottom of the screen),
+      // not just once it reaches the bottom edge. Heavier/closer (bigger
+      // scale) drops splash more often and leave bigger marks.
+      if (isFront) {
+        const impactChance = speedFactor * (0.04 + drawWeight * 0.2) * dt;
+        if (Math.random() < impactChance) this.spawnRipple(d.x, d.y, drawWeight);
+      }
+
       ctx.beginPath();
       ctx.moveTo(d.x, d.y);
       ctx.lineTo(tailX, tailY);
@@ -207,7 +238,13 @@ export class ParticleSystem {
 
       const offscreenX = !isFront && (d.x < -60 || d.x > this.width + 60);
       if (d.y > this.height || offscreenX) {
-        if (!offscreenX && Math.random() < 0.35) this.spawnRipple(d.x, d.weight);
+        // 'front' drops already splash continuously on the way down; only
+        // leaning ('left'/'right') drops still need a splash marking where
+        // they run off the bottom edge.
+        if (!isFront && !offscreenX && Math.random() < 0.35) {
+          const y = this.height * 0.85 + Math.random() * this.height * 0.15;
+          this.spawnRipple(d.x, y, d.weight);
+        }
         d.y = -d.len - Math.random() * 40;
         d.x = Math.random() * this.width;
         d.originX = (Math.random() - 0.5) * this.width;
