@@ -15,6 +15,8 @@ interface Drop {
   sway: number;
   weight: number; // 0-1, derived from size — thicker/brighter, and louder/lower splash
   originX: number; // offset from the vanishing point; only used in 'front' direction
+  wobblePhase: number; // per-drop offset so falls aren't perfectly straight lines
+  wobbleAmp: number;
 }
 
 interface Ripple {
@@ -96,6 +98,8 @@ export class ParticleSystem {
       sway,
       weight: (len - 10) / 18,
       originX: (Math.random() - 0.5) * this.width,
+      wobblePhase: Math.random() * Math.PI * 2,
+      wobbleAmp: 3 + Math.random() * 9,
     };
   }
 
@@ -201,9 +205,14 @@ export class ParticleSystem {
       } else {
         d.x += d.sway * windFactor * dt;
       }
+      // Real drops don't fall in a perfectly straight line — a small,
+      // slowly-shifting side wobble so the streak drifts rather than
+      // tracking a ruler-straight path frame to frame.
+      d.x += Math.sin(d.y * 0.02 + d.wobblePhase) * d.wobbleAmp * (isFront ? 0.2 + t * 0.6 : 0.35);
 
       const drawLen = d.len * scale;
-      const drawWeight = d.weight * scale;
+      const dropGrowthMultiplier = 1.9
+      const drawWeight = d.weight * scale * dropGrowthMultiplier;
       const tailX = isFront ? d.x : d.x - d.sway * windFactor * 0.05;
       const tailY = d.y - drawLen;
 
@@ -217,23 +226,56 @@ export class ParticleSystem {
         if (Math.random() < impactChance) this.spawnRipple(d.x, d.y, drawWeight);
       }
 
+      // Soft ambient glow behind the streak — same straight stroke as
+      // before, kept faint so it reads as light bleed, not the drop itself.
       ctx.beginPath();
       ctx.moveTo(d.x, d.y);
       ctx.lineTo(tailX, tailY);
-      ctx.strokeStyle = `rgba(190, 215, 255, ${0.1 + drawWeight * 0.08})`;
-      ctx.lineWidth = 3 + drawWeight * 3;
+      ctx.strokeStyle = `rgba(190, 215, 255, ${0.08 + drawWeight * 0.06})`;
+      ctx.lineWidth = 4 + drawWeight * 4;
       ctx.stroke();
 
-      ctx.beginPath();
-      ctx.moveTo(d.x, d.y);
-      ctx.lineTo(tailX, tailY);
-      ctx.strokeStyle = `rgba(228, 242, 255, ${0.55 + drawWeight * 0.3})`;
-      ctx.lineWidth = 1 + drawWeight;
-      ctx.stroke();
+      // The drop itself: a tapered needle (thin trailing tail, fuller near
+      // the head) instead of a uniform-width line, with a gradient fill so
+      // it fades into the glow rather than cutting off — a rough stand-in
+      // for motion blur on a falling drop.
+      const segDx = d.x - tailX;
+      const segDy = d.y - tailY;
+      const segLen = Math.hypot(segDx, segDy) || 1;
+      const nx = -segDy / segLen;
+      const ny = segDx / segLen;
+      const headHalfW = 0.5 + drawWeight * 1.3;
+      const tailHalfW = headHalfW * 0.18;
+
+      const bodyGrad = ctx.createLinearGradient(tailX, tailY, d.x, d.y);
+      bodyGrad.addColorStop(0, 'rgba(215, 232, 255, 0)');
+      bodyGrad.addColorStop(1, `rgba(228, 242, 255, ${0.55 + drawWeight * 0.3})`);
 
       ctx.beginPath();
-      ctx.arc(d.x, d.y, 1 + drawWeight, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(235, 247, 255, 0.55)';
+      ctx.moveTo(tailX + nx * tailHalfW, tailY + ny * tailHalfW);
+      ctx.lineTo(d.x + nx * headHalfW, d.y + ny * headHalfW);
+      ctx.lineTo(d.x - nx * headHalfW, d.y - ny * headHalfW);
+      ctx.lineTo(tailX - nx * tailHalfW, tailY - ny * tailHalfW);
+      ctx.closePath();
+      ctx.fillStyle = bodyGrad;
+      ctx.fill();
+
+      // Glint: the brightest point on the drop, where it catches the light
+      // — elongated along the fall direction, sitting toward the head.
+      const glintX = tailX + segDx * 0.78;
+      const glintY = tailY + segDy * 0.78;
+      const angle = Math.atan2(segDy, segDx);
+      ctx.beginPath();
+      ctx.ellipse(
+        glintX,
+        glintY,
+        drawLen * 0.16 + headHalfW * 0.6,
+        headHalfW * 0.65,
+        angle,
+        0,
+        Math.PI * 2,
+      );
+      ctx.fillStyle = `rgba(245, 251, 255, ${0.5 + drawWeight * 0.35})`;
       ctx.fill();
 
       const offscreenX = !isFront && (d.x < -60 || d.x > this.width + 60);
