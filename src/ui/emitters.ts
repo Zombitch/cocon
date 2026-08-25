@@ -5,56 +5,33 @@ export interface Emitters {
 }
 
 // Emitter coordinates are percentages of the *foreground image itself*
-// (measured against the art), not the viewport. Since the image renders
-// with background-size: cover, the visible portion is scaled and cropped
-// depending on the container's aspect ratio — this replicates that cover
-// math to place each emitter exactly on the candle flame / cup rim no
-// matter how the image ends up stretched.
+// (measured against the art). #scene is letterboxed to the art's own
+// aspect ratio (see renderScene / style.css's #scene.letterboxed), so
+// #foreground's rendered box is always exactly proportioned to the image —
+// no cover/contain scale-and-offset math needed, a plain percentage of the
+// container's real size lands exactly on the candle flame / cup rim.
 //
-// Positioning is driven off the foreground element's *actual* rendered
-// box (via ResizeObserver + getBoundingClientRect), not window.innerWidth/
-// innerHeight behind a resize/orientationchange listener. window-level
-// events are an indirect proxy for "the container changed size" — they can
-// be skipped by some mobile browsers on rotation, and even when they do
-// fire, window.innerWidth/innerHeight can still reflect the pre-rotation
-// layout for a frame while the address bar animates. ResizeObserver
-// reports the box the browser actually settled on, for any reason it
-// changed (rotation, resize, zoom, fullscreen), so there's no stale read
-// and no missed event to fall back to.
-export function setupEmitters(nodes: HTMLElement[], foregroundEl: HTMLElement, foregroundUrl: string | undefined, ambiance: Ambiance): Emitters {
-  if (nodes.length === 0 || !foregroundUrl) return { dispose() {} };
-
-  let naturalWidth = 0;
-  let naturalHeight = 0;
+// Driven by ResizeObserver + getBoundingClientRect on the actual element
+// rather than window.innerWidth/innerHeight behind a resize listener:
+// window-level events are an indirect proxy for "the container changed
+// size" — easy to miss on rotation, and can still read stale dimensions
+// for a frame while the browser chrome animates. ResizeObserver reports
+// the box the browser actually settled on, for any reason it changed.
+export function setupEmitters(nodes: HTMLElement[], foregroundEl: HTMLElement, ambiance: Ambiance): Emitters {
+  if (nodes.length === 0) return { dispose() {} };
 
   function reposition(): void {
-    if (!naturalWidth || !naturalHeight) return;
     const rect = foregroundEl.getBoundingClientRect();
-    const containerWidth = rect.width;
-    const containerHeight = rect.height;
-    if (!containerWidth || !containerHeight) return;
-    const scale = Math.max(containerWidth / naturalWidth, containerHeight / naturalHeight);
-    const displayedWidth = naturalWidth * scale;
-    const displayedHeight = naturalHeight * scale;
-    const offsetX = (containerWidth - displayedWidth) / 2;
-    const offsetY = (containerHeight - displayedHeight) / 2;
-
+    if (!rect.width || !rect.height) return;
     nodes.forEach((node, i) => {
       const emitter = ambiance.emitters?.[i];
       if (!emitter) return;
-      node.style.left = `${offsetX + (emitter.xPercent / 100) * displayedWidth}px`;
-      node.style.top = `${offsetY + (emitter.yPercent / 100) * displayedHeight}px`;
+      node.style.left = `${(emitter.xPercent / 100) * rect.width}px`;
+      node.style.top = `${(emitter.yPercent / 100) * rect.height}px`;
     });
   }
 
-  const img = new Image();
-  img.onload = () => {
-    naturalWidth = img.naturalWidth;
-    naturalHeight = img.naturalHeight;
-    reposition();
-  };
-  img.src = foregroundUrl;
-
+  reposition();
   const observer = new ResizeObserver(() => reposition());
   observer.observe(foregroundEl);
 

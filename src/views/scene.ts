@@ -21,25 +21,28 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
   document.title = ambiance.name;
 
   root.innerHTML = `
-    <div id="scene" style="--sky-0:${ambiance.skyColors[0]};--sky-1:${ambiance.skyColors[1]};--sky-2:${ambiance.skyColors[2]}">
-      <div id="sky"></div>
-      <div id="background" class="bg-layer" style="${ambiance.images.background ? layerStyle(ambiance.skyColors[1], ambiance.images.background) : ''}"></div>
-      <canvas id="weather-canvas"></canvas>
-      <div id="foreground" class="bg-layer" style="${ambiance.images.foreground ? layerStyle(ambiance.skyColors[1], ambiance.images.foreground) : ''}"></div>
-      <div id="lightning-flash"></div>
-      <div id="cocoon-vignette"></div>
-      ${(ambiance.emitters ?? [])
-        .map((e) =>
-          e.type === 'flicker'
-            ? `<div class="emitter flicker"><span class="glow"></span></div>`
-            : `
-        <div class="emitter ${e.type}">
-          <span class="wisp"></span>
-          <span class="wisp"></span>
-          <span class="wisp"></span>
-        </div>`,
-        )
-        .join('')}
+    <div id="stage">
+      <div id="scene" style="--sky-0:${ambiance.skyColors[0]};--sky-1:${ambiance.skyColors[1]};--sky-2:${ambiance.skyColors[2]}">
+        <div id="sky"></div>
+        <div id="background" class="bg-layer" style="${ambiance.images.background ? layerStyle(ambiance.skyColors[1], ambiance.images.background) : ''}"></div>
+        <canvas id="weather-canvas"></canvas>
+        <div id="foreground" class="bg-layer" style="${ambiance.images.foreground ? layerStyle(ambiance.skyColors[1], ambiance.images.foreground) : ''}"></div>
+        <div id="lightning-flash"></div>
+        <div id="cocoon-vignette"></div>
+        ${(ambiance.emitters ?? [])
+          .map((e) =>
+            e.type === 'flicker'
+              ? `<div class="emitter flicker"><span class="glow"></span></div>`
+              : `
+          <div class="emitter ${e.type}">
+            <span class="wisp"></span>
+            <span class="wisp"></span>
+            <span class="wisp"></span>
+          </div>`,
+          )
+          .join('')}
+      </div>
+
       <div id="intensity-gauge"><div id="intensity-gauge-fill"></div></div>
       <div id="caption">${ambiance.caption}</div>
 
@@ -80,6 +83,24 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
   `;
 
   const sceneEl = el<HTMLElement>('scene');
+
+  // #scene is letterboxed to the artwork's own aspect ratio (see
+  // style.css's #scene.letterboxed) so the whole composition scales as one
+  // coherent unit and is always fully visible, as large as the viewport
+  // allows, rather than each layer independently cover/contain-cropping.
+  // Until the driving image loads (or if the ambiance has no art at all —
+  // snow, desert-wind), #scene just fills the viewport like before.
+  const artUrl = ambiance.images.foreground ?? ambiance.images.background;
+  if (artUrl) {
+    const artImg = new Image();
+    artImg.onload = () => {
+      if (!artImg.naturalWidth || !artImg.naturalHeight) return;
+      sceneEl.style.setProperty('--art-ratio', String(artImg.naturalWidth / artImg.naturalHeight));
+      sceneEl.classList.add('letterboxed');
+    };
+    artImg.src = artUrl;
+  }
+
   const canvas = el<HTMLCanvasElement>('weather-canvas');
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('2D canvas context unavailable');
@@ -106,7 +127,7 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
   const fullscreen = setupFullscreen(menuFullscreen, menu.close);
   const cast = setupCast(castButton);
   const emitterNodes = Array.from(document.querySelectorAll<HTMLElement>('.emitter'));
-  const emitters = setupEmitters(emitterNodes, foregroundEl, ambiance.images.foreground, ambiance);
+  const emitters = setupEmitters(emitterNodes, foregroundEl, ambiance);
 
   let width = 0;
   let height = 0;

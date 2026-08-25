@@ -25,8 +25,8 @@ export const ambiances: Record<string, Ambiance> = {
       accent: '/audio/boomy-thunder-shock.wav',
     },
     emitters: [
-      { type: 'smoke', xPercent: 71.4, yPercent: 62.2 },
-      { type: 'flicker', xPercent: 71.4, yPercent: 62.2 },
+      { type: 'smoke', xPercent: 71.5, yPercent: 64.2 },
+      { type: 'flicker', xPercent: 71.5, yPercent: 63 },
     ],
   },
   snow: {
@@ -59,7 +59,7 @@ export const ambiances: Record<string, Ambiance> = {
     },
     emitters: [
       { type: 'steam', xPercent: 59.0, yPercent: 79.8 },
-      { type: 'smoke', xPercent: 81.3, yPercent: 82.4 },
+      { type: 'smoke', xPercent: 81.5, yPercent: 85 },
       { type: 'flicker', xPercent: 81.3, yPercent: 82.4 },
     ],
   },
