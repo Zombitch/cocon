@@ -84,6 +84,7 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('2D canvas context unavailable');
   const flashEl = el<HTMLElement>('lightning-flash');
+  const vignetteEl = el<HTMLElement>('cocoon-vignette');
   const startOverlay = el<HTMLElement>('start-overlay');
   const startButton = el<HTMLButtonElement>('start-button');
   const timerWrapper = el<HTMLElement>('timer-wrapper');
@@ -151,7 +152,8 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
   let audio: AudioEngine | null = null;
 
   function startExperience(): void {
-    startOverlay.style.display = 'none';
+    startOverlay.classList.add('hidden');
+    vignetteEl.classList.add('breathe-in');
     timerWrapper.style.display = 'inline-block';
 
     audio = new AudioEngine();

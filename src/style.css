@@ -343,12 +343,32 @@ body:has(#scene) {
 }
 
 /* The cozy cocoon: a warm vignette framing the room, contrasted with the
-   cold storm outside the "window" */
+   cold storm outside the "window". Starts invisible/slightly zoomed-out —
+   irrelevant while #start-overlay covers it — then "breathes in" (fades
+   up, settles to scale 1) right as the overlay dissolves, so the warmth
+   of the room feels like it's swelling into place as the curtain parts,
+   not just appearing behind a cut. */
 #cocoon-vignette {
   position: absolute;
   inset: 0;
   pointer-events: none;
   background: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0) 40%, rgba(5, 7, 13, 0.85) 100%);
+  opacity: 0;
+  transform: scale(1.08);
+  transition:
+    opacity 1.8s ease 0.2s,
+    transform 1.8s ease 0.2s;
+}
+#cocoon-vignette.breathe-in {
+  opacity: 1;
+  transform: scale(1);
+}
+@media (prefers-reduced-motion: reduce) {
+  #cocoon-vignette {
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* Storm-intensity feedback — only shown while actively dragging */
@@ -406,6 +426,24 @@ body:has(#scene) {
   color: #ffe6c2;
   text-align: center;
   padding: 2rem;
+  opacity: 1;
+  transition:
+    opacity 1.4s ease,
+    visibility 0s linear 1.4s;
+}
+/* Entering fades the curtain out rather than cutting to the scene —
+   pointer-events drop immediately (so the storm/drag gestures underneath
+   are live right away) while the overlay itself visibly dissolves on top,
+   in step with #cocoon-vignette breathing in behind it. */
+#start-overlay.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  #start-overlay {
+    transition: none;
+  }
 }
 
 #start-overlay h1 {
