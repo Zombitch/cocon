@@ -6,11 +6,22 @@ export interface Emitters {
 
 // Emitter coordinates are percentages of the *foreground image itself*
 // (measured against the art), not the viewport. Since the image renders
-// with background-size: cover, the viewport-visible portion is scaled and
-// cropped depending on the container's aspect ratio — this replicates that
-// cover math to place each emitter exactly on the candle flame / cup rim
-// no matter how the image ends up stretched.
-export function setupEmitters(nodes: HTMLElement[], foregroundUrl: string | undefined, ambiance: Ambiance): Emitters {
+// with background-size: cover, the visible portion is scaled and cropped
+// depending on the container's aspect ratio — this replicates that cover
+// math to place each emitter exactly on the candle flame / cup rim no
+// matter how the image ends up stretched.
+//
+// Positioning is driven off the foreground element's *actual* rendered
+// box (via ResizeObserver + getBoundingClientRect), not window.innerWidth/
+// innerHeight behind a resize/orientationchange listener. window-level
+// events are an indirect proxy for "the container changed size" — they can
+// be skipped by some mobile browsers on rotation, and even when they do
+// fire, window.innerWidth/innerHeight can still reflect the pre-rotation
+// layout for a frame while the address bar animates. ResizeObserver
+// reports the box the browser actually settled on, for any reason it
+// changed (rotation, resize, zoom, fullscreen), so there's no stale read
+// and no missed event to fall back to.
+export function setupEmitters(nodes: HTMLElement[], foregroundEl: HTMLElement, foregroundUrl: string | undefined, ambiance: Ambiance): Emitters {
   if (nodes.length === 0 || !foregroundUrl) return { dispose() {} };
 
   let naturalWidth = 0;
@@ -18,8 +29,10 @@ export function setupEmitters(nodes: HTMLElement[], foregroundUrl: string | unde
 
   function reposition(): void {
     if (!naturalWidth || !naturalHeight) return;
-    const containerWidth = window.innerWidth;
-    const containerHeight = window.innerHeight;
+    const rect = foregroundEl.getBoundingClientRect();
+    const containerWidth = rect.width;
+    const containerHeight = rect.height;
+    if (!containerWidth || !containerHeight) return;
     const scale = Math.max(containerWidth / naturalWidth, containerHeight / naturalHeight);
     const displayedWidth = naturalWidth * scale;
     const displayedHeight = naturalHeight * scale;
@@ -42,11 +55,12 @@ export function setupEmitters(nodes: HTMLElement[], foregroundUrl: string | unde
   };
   img.src = foregroundUrl;
 
-  window.addEventListener('resize', reposition);
+  const observer = new ResizeObserver(() => reposition());
+  observer.observe(foregroundEl);
 
   return {
     dispose() {
-      window.removeEventListener('resize', reposition);
+      observer.disconnect();
     },
   };
 }

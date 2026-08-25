@@ -85,6 +85,7 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
   if (!ctx) throw new Error('2D canvas context unavailable');
   const flashEl = el<HTMLElement>('lightning-flash');
   const vignetteEl = el<HTMLElement>('cocoon-vignette');
+  const foregroundEl = el<HTMLElement>('foreground');
   const startOverlay = el<HTMLElement>('start-overlay');
   const startButton = el<HTMLButtonElement>('start-button');
   const timerWrapper = el<HTMLElement>('timer-wrapper');
@@ -105,7 +106,7 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
   const fullscreen = setupFullscreen(menuFullscreen, menu.close);
   const cast = setupCast(castButton);
   const emitterNodes = Array.from(document.querySelectorAll<HTMLElement>('.emitter'));
-  const emitters = setupEmitters(emitterNodes, ambiance.images.foreground, ambiance);
+  const emitters = setupEmitters(emitterNodes, foregroundEl, ambiance.images.foreground, ambiance);
 
   let width = 0;
   let height = 0;
@@ -129,14 +130,22 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
   );
 
   function resize(): void {
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
+    const rect = sceneEl.getBoundingClientRect();
+    width = canvas.width = rect.width;
+    height = canvas.height = rect.height;
     particles.resize(width, height);
     condensation.resize(width, height);
     lightning.resize(width, height);
   }
   resize();
-  window.addEventListener('resize', resize);
+  // Driven off #scene's real box via ResizeObserver rather than
+  // window.innerWidth behind resize/orientationchange listeners — see
+  // ui/emitters.ts for why: window-level events are an indirect, sometimes
+  // skipped or stale-at-fire-time proxy for "the container changed size".
+  // ResizeObserver reports the settled box directly, for any reason it
+  // changed (rotation, resize, zoom, fullscreen).
+  const sceneResizeObserver = new ResizeObserver(() => resize());
+  sceneResizeObserver.observe(sceneEl);
 
   // ---- Storm intensity — slide up for wilder, slide down for calmer ----
   // 0.5 is the resting default, chosen so nothing changes from prior tuned
@@ -263,7 +272,7 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
   document.addEventListener('click', onClick);
 
   return function dispose(): void {
-    window.removeEventListener('resize', resize);
+    sceneResizeObserver.disconnect();
     document.removeEventListener('pointerdown', onPointerDown);
     document.removeEventListener('pointermove', onPointerMove);
     document.removeEventListener('pointerup', endDrag);
