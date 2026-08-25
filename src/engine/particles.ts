@@ -119,13 +119,22 @@ export class ParticleSystem {
     };
   }
 
+  // Ripples read as rain hitting the window pane itself, not a puddle along
+  // a ground line — spread across the lower third of the frame instead of
+  // clinging to a thin strip at the very bottom edge. They also shrink/fade
+  // toward the screen's sides: a drop landing dead center (in 'front' mode,
+  // where fanned-out drops converge — right in front of the viewer) keeps
+  // today's baseline size as its ceiling, drops off to either side land
+  // more glancingly. Never bigger than the existing baseline, only smaller.
   private spawnRipple(x: number, weight: number): void {
+    const centerFactor = 1 - Math.min(1, Math.abs(x - this.width / 2) / (this.width * 0.55));
+    const sizeFactor = 0.55 + 0.45 * centerFactor;
     this.ripples.push({
       x,
-      y: this.height - Math.random() * 14,
+      y: this.height * 0.65 + Math.random() * this.height * 0.35,
       radius: 1,
-      maxRadius: 14 + weight * 22,
-      alpha: 0.5 + weight * 0.2,
+      maxRadius: (14 + weight * 22) * sizeFactor,
+      alpha: (0.5 + weight * 0.2) * (0.65 + 0.35 * centerFactor),
     });
     if (this.ripples.length > 150) this.ripples.shift();
   }
