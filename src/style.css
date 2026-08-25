@@ -402,7 +402,7 @@ body:has(#scene) {
 #intensity-gauge {
   position: absolute;
   top: 50%;
-  right: 1.4rem;
+  right: calc(1.4rem + env(safe-area-inset-right));
   transform: translateY(-50%);
   width: 6px;
   height: 140px;
@@ -431,7 +431,11 @@ body:has(#scene) {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 6vh;
+  /* Standalone home-screen mode renders edge-to-edge (viewport-fit=cover),
+     so the home indicator / gesture bar area needs explicit clearance on
+     top of the usual visual spacing — env() resolves to 0 in a normal
+     browser tab, so this is a no-op there. */
+  bottom: calc(6vh + env(safe-area-inset-bottom));
   text-align: center;
   color: #ffe6c2;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
@@ -504,8 +508,11 @@ body:has(#scene) {
 
 #controls {
   position: absolute;
-  top: 1.2rem;
-  right: 1.2rem;
+  /* Standalone edge-to-edge mode (viewport-fit=cover) can put this under
+     the notch/dynamic-island or a rounded corner otherwise; env() is 0 in
+     a normal browser tab, so this only adds clearance when it's needed. */
+  top: calc(1.2rem + env(safe-area-inset-top));
+  right: calc(1.2rem + env(safe-area-inset-right));
   z-index: 5;
   display: flex;
   align-items: center;

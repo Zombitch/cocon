@@ -2,8 +2,28 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Cocon</title>
+
+    <!-- Add-to-Home-Screen: the only legitimate way to get a chrome-less
+         iPhone view (no Safari URL/tab bar) — a separate code path from
+         requestFullscreen(), which iOS Safari doesn't support at all.
+         The manifest covers Android/Chrome's install prompt too; the
+         apple-* meta tags are iOS's older, still-required-in-practice
+         parallel mechanism (Safari's manifest support is partial/recent). -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#05070d" />
+
+    <!-- iOS Safari -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Cocon" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+
+    <!-- Older Android/Chrome fallback alongside the manifest -->
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <link rel="icon" href="/icons/favicon-32.png" type="image/png" />
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
