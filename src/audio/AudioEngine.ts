@@ -9,7 +9,7 @@ import { lerp3 } from '../engine/particles';
 export class AudioEngine {
   private ctx: AudioContext;
   private masterGain: GainNode;
-  private accentBuffer: AudioBuffer | null = null;
+  private accentBuffers: AudioBuffer[] = [];
   private loopGainNode: GainNode | null = null;
   private loopSourceNode: AudioBufferSourceNode | null = null;
   private muted = false;
@@ -36,8 +36,8 @@ export class AudioEngine {
       .then((buf) => this.ctx.decodeAudioData(buf));
   }
 
-  async loadAccent(url: string): Promise<void> {
-    this.accentBuffer = await this.loadSound(url);
+  async loadAccent(urls: string[]): Promise<void> {
+    this.accentBuffers = await Promise.all(urls.map((url) => this.loadSound(url)));
   }
 
   async startLoop(url: string): Promise<void> {
@@ -61,10 +61,10 @@ export class AudioEngine {
   // distanceFactor: 0 = right overhead, 1 = far away. Farther sounds
   // quieter/duller (air absorbs high frequencies over distance).
   playAccent(distanceFactor: number, pan: number): void {
-    if (!this.accentBuffer || this.muted) return;
+    if (!this.accentBuffers.length || this.muted) return;
 
     const source = this.ctx.createBufferSource();
-    source.buffer = this.accentBuffer;
+    source.buffer = this.accentBuffers[Math.floor(Math.random() * this.accentBuffers.length)];
     source.playbackRate.value = 0.95 + Math.random() * 0.1;
 
     const filter = this.ctx.createBiquadFilter();
@@ -108,5 +108,12 @@ export class AudioEngine {
     // Pitch shift capped more conservatively than the other knobs — past
     // this it starts sounding chipmunked rather than "more intense".
     this.setLoopPlaybackRate(lerp3(0.75, 1, 1.4, intensity), rampSeconds);
+  }
+
+  // Stops the loop and closes the context — no sound survives past this,
+  // including any accent already scheduled to play.
+  dispose(): void {
+    this.loopSourceNode?.stop();
+    void this.ctx.close();
   }
 }

@@ -21,8 +21,8 @@ export const ambiances: Record<string, Ambiance> = {
       foreground: '/images/car-foreground.png',
     },
     sounds: {
-      loop: '/audio/rain-fx-inside-car.wav',
-      accent: '/audio/boomy-thunder-shock.wav',
+      loop: ['/audio/rain-car.mp3'],
+      accent: ['/audio/boomy-thunder-shock.wav', '/audio/thunder-clap.mp3', '/audio/thunder-strike.mp3', '/audio/thunder-loud.mp3'],
     },
     emitters: [
       { type: 'smoke', xPercent: 71.5, yPercent: 64.2 },
@@ -54,13 +54,35 @@ export const ambiances: Record<string, Ambiance> = {
       foreground: '/images/forest-foreground.png',
     },
     sounds: {
-      loop: '/audio/rain-fx-inside-car.wav',
-      accent: '/audio/boomy-thunder-shock.wav',
+      loop: ['/audio/rain-fx-inside-car.wav'],
+      accent: ['/audio/boomy-thunder-shock.wav', '/audio/thunder-clap.mp3', '/audio/thunder-strike.mp3', '/audio/thunder-loud.mp3'],
     },
     emitters: [
       { type: 'steam', xPercent: 59.0, yPercent: 79.8 },
       { type: 'smoke', xPercent: 81.5, yPercent: 85 },
       { type: 'flicker', xPercent: 81.3, yPercent: 82.4 },
+    ],
+  },
+  dome: {
+    id: 'dome',
+    name: 'Sous le dôme',
+    cardText: 'Un igloo de verre, bercé par la pluie et les guirlandes.',
+    caption: 'La forêt se floute derrière la buée, nous sommes bien au chaud.',
+    particleType: 'rain',
+    windDirection: 'front',
+    hasLightning: true,
+    skyColors: ['#28394a', '#152230', '#05070d'],
+    images: {
+      background: '/images/dome-background.png',
+      foreground: '/images/dome-foreground.png',
+    },
+    sounds: {
+      loop: ['/audio/rain-fx-inside-car.wav'],
+      accent: ['/audio/boomy-thunder-shock.wav', '/audio/thunder-clap.mp3', '/audio/thunder-strike.mp3', '/audio/thunder-loud.mp3'],
+    },
+    emitters: [
+      { type: 'flicker', xPercent: 39.8, yPercent: 65.1 },
+      { type: 'flicker', xPercent: 55.4, yPercent: 67.7 },
     ],
   },
   'desert-wind': {
@@ -78,7 +100,7 @@ export const ambiances: Record<string, Ambiance> = {
 
 // Ids shown as cards on the home screen — everything else stays reachable
 // directly via /#/<id> but isn't advertised there.
-const HOME_IDS = ['car-rain', 'forest-rain'];
+const HOME_IDS = ['car-rain', 'forest-rain', 'dome'];
 
 export function getAmbiance(id: string): Ambiance | null {
   return Object.prototype.hasOwnProperty.call(ambiances, id) ? ambiances[id] : null;

@@ -188,7 +188,11 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
 
     audio = new AudioEngine();
     if (ambiance.sounds.accent) void audio.loadAccent(ambiance.sounds.accent);
-    if (ambiance.sounds.loop) void audio.startLoop(ambiance.sounds.loop);
+    if (ambiance.sounds.loop) {
+      // Picked once per session — reload or re-enter the ambiance to reroll.
+      const loopUrl = ambiance.sounds.loop[Math.floor(Math.random() * ambiance.sounds.loop.length)];
+      void audio.startLoop(loopUrl);
+    }
     audio.applyIntensity(intensity);
 
     if (ambiance.hasLightning) lightning.scheduleNext();
@@ -302,6 +306,7 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
     if (animationFrameId !== null) cancelAnimationFrame(animationFrameId);
     if (gaugeHideTimeoutId) clearTimeout(gaugeHideTimeoutId);
     lightning.dispose();
+    audio?.dispose();
     menu.dispose();
     fullscreen.dispose();
     cast.dispose();

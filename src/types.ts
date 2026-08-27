@@ -7,8 +7,11 @@ export type ParticleType = 'rain' | 'snow' | 'wind';
 export type WindDirection = 'front' | 'left' | 'right';
 
 export interface AmbianceSounds {
-  loop?: string;
-  accent?: string;
+  // One is picked at random when the ambiance starts and kept for the
+  // whole session (reload/re-pick the ambiance to reroll).
+  loop?: string[];
+  // One is picked at random every time a thunder strike fires.
+  accent?: string[];
 }
 
 export interface AmbianceImages {
