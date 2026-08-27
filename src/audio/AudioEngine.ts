@@ -14,6 +14,17 @@ export class AudioEngine {
   private loopSourceNode: AudioBufferSourceNode | null = null;
   private muted = false;
 
+  get isMuted(): boolean {
+    return this.muted;
+  }
+
+  // Mutes everything at once (loop + accents) via the shared master gain,
+  // independent of intensity/ramp state so unmuting restores exactly.
+  setMuted(muted: boolean): void {
+    this.muted = muted;
+    this.masterGain.gain.value = muted ? 0 : 1;
+  }
+
   constructor() {
     const Ctor = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     this.ctx = new Ctor();

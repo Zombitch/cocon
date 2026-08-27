@@ -59,6 +59,7 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
             <button type="button" role="menuitem" data-minutes="60">60 min</button>
           </div>
         </div>
+        <button id="mute-button" type="button" aria-label="Couper le son" aria-pressed="false">🔊</button>
         <div id="menu-wrapper">
           <button id="menu-button" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Menu">⋮</button>
           <div id="menu-dropdown" role="menu">
@@ -118,6 +119,7 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
   const closedEyesOverlay = el<HTMLElement>('closed-eyes-overlay');
   const closedEyesHint = el<HTMLElement>('closed-eyes-hint');
   const castButton = el<HTMLButtonElement>('cast-button');
+  const muteButton = el<HTMLButtonElement>('mute-button');
   const menuButton = el<HTMLButtonElement>('menu-button');
   const menuDropdown = el<HTMLElement>('menu-dropdown');
   const menuEyes = el<HTMLButtonElement>('menu-eyes');
@@ -181,12 +183,27 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
   // ---- Audio (starts only after the user-gesture "enter" click) ----
   let audio: AudioEngine | null = null;
 
+  // Tracked separately from AudioEngine so it works even before the cocon
+  // is entered (audio doesn't exist yet) and survives the engine being
+  // recreated.
+  let muted = false;
+  function setMuted(value: boolean): void {
+    muted = value;
+    audio?.setMuted(muted);
+    muteButton.textContent = muted ? '🔇' : '🔊';
+    muteButton.setAttribute('aria-pressed', String(muted));
+    muteButton.setAttribute('aria-label', muted ? 'Réactiver le son' : 'Couper le son');
+  }
+  muteButton.addEventListener('click', () => setMuted(!muted));
+
   function startExperience(): void {
     startOverlay.classList.add('hidden');
     vignetteEl.classList.add('breathe-in');
     timerWrapper.style.display = 'inline-block';
+    muteButton.style.display = 'inline-flex';
 
     audio = new AudioEngine();
+    audio.setMuted(muted);
     if (ambiance.sounds.accent) void audio.loadAccent(ambiance.sounds.accent);
     if (ambiance.sounds.loop) {
       // Picked once per session — reload or re-enter the ambiance to reroll.

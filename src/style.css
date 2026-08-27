@@ -576,6 +576,21 @@ body:has(#scene) {
   display: none;
 }
 
+#mute-button {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 230, 194, 0.4);
+  background: rgba(5, 7, 13, 0.4);
+  color: #ffe6c2;
+  cursor: pointer;
+}
+
 #menu-wrapper {
   position: relative;
 }
