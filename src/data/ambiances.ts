@@ -85,6 +85,24 @@ export const ambiances: Record<string, Ambiance> = {
       { type: 'flicker', xPercent: 55.4, yPercent: 67.7 },
     ],
   },
+  mountains: {
+    id: 'mountains',
+    name: 'En montagne, sous la tente',
+    cardText: 'La pluie crépite sur la toile, les sommets se perdent dans la brume.',
+    caption: 'Le vent glisse sur la roche, mais ici, tout est calme.',
+    particleType: 'rain',
+    windDirection: 'front',
+    hasLightning: true,
+    skyColors: ['#3a4250', '#20262f', '#05070d'],
+    images: {
+      background: '/images/mountains-tent-background.png',
+      foreground: '/images/mountains-tent-foreground.png',
+    },
+    sounds: {
+      loop: ['/audio/rain-fx-inside-car.wav'],
+      accent: ['/audio/boomy-thunder-shock.wav', '/audio/thunder-clap.mp3', '/audio/thunder-strike.mp3', '/audio/thunder-loud.mp3'],
+    },
+  },
   'desert-wind': {
     id: 'desert-wind',
     name: 'Vent du désert',
@@ -100,7 +118,7 @@ export const ambiances: Record<string, Ambiance> = {
 
 // Ids shown as cards on the home screen — everything else stays reachable
 // directly via /#/<id> but isn't advertised there.
-const HOME_IDS = ['car-rain', 'forest-rain', 'dome'];
+const HOME_IDS = ['car-rain', 'forest-rain', 'dome', 'mountains'];
 
 export function getAmbiance(id: string): Ambiance | null {
   return Object.prototype.hasOwnProperty.call(ambiances, id) ? ambiances[id] : null;
