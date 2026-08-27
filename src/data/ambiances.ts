@@ -81,8 +81,15 @@ export const ambiances: Record<string, Ambiance> = {
       accent: ['/audio/boomy-thunder-shock.wav', '/audio/thunder-clap.mp3', '/audio/thunder-strike.mp3', '/audio/thunder-loud.mp3'],
     },
     emitters: [
-      { type: 'flicker', xPercent: 39.8, yPercent: 65.1 },
-      { type: 'flicker', xPercent: 55.4, yPercent: 67.7 },
+      { type: 'flicker', xPercent: 44, yPercent: 59.1 },
+      { type: 'flicker', xPercent: 38, yPercent: 60.1 },
+      { type: 'flicker', xPercent: 35.8, yPercent: 70.6 },
+      { type: 'flicker', xPercent: 39.8, yPercent: 69.1 },
+      { type: 'flicker', xPercent: 51.8, yPercent: 69.1 },
+      { type: 'flicker', xPercent: 58, yPercent: 67.7 },
+      { type: 'flicker', xPercent: 63, yPercent: 59.3 },
+      { type: 'flicker', xPercent: 70, yPercent: 67.7 },
+      { type: 'flicker', xPercent: 77, yPercent: 70.7 },
     ],
   },
   mountains: {
