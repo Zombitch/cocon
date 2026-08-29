@@ -29,11 +29,12 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
         <div id="foreground" class="bg-layer" style="${ambiance.images.foreground ? layerStyle(ambiance.skyColors[1], ambiance.images.foreground) : ''}"></div>
         <div id="lightning-flash"></div>
         <div id="cocoon-vignette"></div>
-        ${(ambiance.emitters ?? [])
-          .map((e) => {
-            if (e.type === 'flicker') return `<div class="emitter flicker"><span class="glow"></span></div>`;
-            if (e.type === 'fire')
-              return `
+        <div id="emitters-layer" style="display: none">
+          ${(ambiance.emitters ?? [])
+            .map((e) => {
+              if (e.type === 'flicker') return `<div class="emitter flicker"><span class="glow"></span></div>`;
+              if (e.type === 'fire')
+                return `
           <div class="emitter fire">
             <span class="fire-glow"></span>
             <span class="ember-bed"></span>
@@ -48,14 +49,15 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
             <span class="ember"></span>
             <span class="ember"></span>
           </div>`;
-            return `
+              return `
           <div class="emitter ${e.type}">
             <span class="wisp"></span>
             <span class="wisp"></span>
             <span class="wisp"></span>
           </div>`;
-          })
-          .join('')}
+            })
+            .join('')}
+        </div>
       </div>
 
       <div id="intensity-gauge"><div id="intensity-gauge-fill"></div></div>
@@ -121,6 +123,7 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
   const canvas = el<HTMLCanvasElement>('weather-canvas');
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('2D canvas context unavailable');
+  const emittersLayer = el<HTMLElement>('emitters-layer');
   const flashEl = el<HTMLElement>('lightning-flash');
   const vignetteEl = el<HTMLElement>('cocoon-vignette');
   const foregroundEl = el<HTMLElement>('foreground');
@@ -230,6 +233,7 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
     vignetteEl.classList.add('breathe-in');
     timerWrapper.style.display = 'inline-block';
     muteButton.style.display = 'inline-flex';
+    emittersLayer.style.display = '';
 
     audio = new AudioEngine();
     audio.setMuted(muted);
