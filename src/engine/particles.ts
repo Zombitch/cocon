@@ -70,7 +70,7 @@ interface WindStreak {
 }
 
 const DROP_COUNT = 220;
-const SNOW_COUNT = 340;
+const SNOW_COUNT = 520;
 const WIND_COUNT = 140;
 
 export class ParticleSystem {
@@ -82,6 +82,7 @@ export class ParticleSystem {
   private ripples: Ripple[] = [];
   private snowflakes: Snowflake[] = [];
   private snowSplashes: SnowSplash[] = [];
+  private snowTime = 0; // drives the shared gust wobble, so all flakes lean together like real wind
   private frostPatches: FrostPatch[] = [];
   private windStreaks: WindStreak[] = [];
 
@@ -440,8 +441,14 @@ export class ParticleSystem {
   private updateAndDrawSnow(ctx: CanvasRenderingContext2D, dt: number, intensity: number): void {
     this.updateAndDrawSnowSplashes(ctx, dt);
 
-    const speedFactor = lerp3(0.5, 1, 2, intensity);
-    const windFactor = lerp3(0.2, 1, 3, intensity);
+    this.snowTime += dt;
+    const speedFactor = lerp3(0.5, 1.15, 2.6, intensity);
+    const windFactor = lerp3(0.2, 1, 4.5, intensity);
+    // Two overlapping slow sines beat against each other so the gust
+    // strengthens and eases instead of holding one constant blow — same
+    // shared value for every flake, so the whole field leans together like
+    // real wind instead of each flake wobbling on its own.
+    const gust = Math.sin(this.snowTime * 0.5) * 0.6 + Math.sin(this.snowTime * 0.13) * 0.4;
     const vpX = this.width / 2;
 
     for (const f of this.snowflakes) {
@@ -454,6 +461,7 @@ export class ParticleSystem {
 
       f.y += f.speed * speedFactor * (0.5 + scale) * dt;
       f.x = vpX + f.originX * posScale;
+      f.x += gust * windFactor * 55 * (0.3 + t * 0.7);
       f.x += Math.sin(f.y * 0.015 + f.wobblePhase) * f.wobbleAmp * windFactor * (0.2 + t * 0.6);
       f.rotation += f.rotationSpeed * dt;
 
