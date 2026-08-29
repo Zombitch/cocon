@@ -25,7 +25,7 @@ export interface AmbianceImages {
 // background-size: cover math at runtime to convert that into an exact
 // on-screen position regardless of how the image ends up stretched/cropped.
 export interface Emitter {
-  type: 'smoke' | 'steam' | 'flicker';
+  type: 'smoke' | 'steam' | 'flicker' | 'fire';
   xPercent: number;
   yPercent: number;
 }

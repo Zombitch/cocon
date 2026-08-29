@@ -30,16 +30,31 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
         <div id="lightning-flash"></div>
         <div id="cocoon-vignette"></div>
         ${(ambiance.emitters ?? [])
-          .map((e) =>
-            e.type === 'flicker'
-              ? `<div class="emitter flicker"><span class="glow"></span></div>`
-              : `
+          .map((e) => {
+            if (e.type === 'flicker') return `<div class="emitter flicker"><span class="glow"></span></div>`;
+            if (e.type === 'fire')
+              return `
+          <div class="emitter fire">
+            <span class="fire-glow"></span>
+            <span class="ember-bed"></span>
+            <span class="flame-body left"></span>
+            <span class="flame-body back"></span>
+            <span class="flame-body right"></span>
+            <span class="flame-body mid"></span>
+            <span class="flame-body core"></span>
+            <span class="ember"></span>
+            <span class="ember"></span>
+            <span class="ember"></span>
+            <span class="ember"></span>
+            <span class="ember"></span>
+          </div>`;
+            return `
           <div class="emitter ${e.type}">
             <span class="wisp"></span>
             <span class="wisp"></span>
             <span class="wisp"></span>
-          </div>`,
-          )
+          </div>`;
+          })
           .join('')}
       </div>
 

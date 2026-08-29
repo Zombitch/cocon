@@ -148,6 +148,21 @@ export const ambiances: Record<string, Ambiance> = {
       { type: 'flicker', xPercent: 97.7, yPercent: 81.3 },
     ],
   },
+  fireplace: {
+    id: 'fireplace',
+    name: 'Au coin du feu',
+    cardText: 'Un feu de bois crépite dans l’âtre, la nuit est calme dehors.',
+    caption: 'Les flammes dansent doucement, la nuit veille derrière la vitre.',
+    particleType: 'snow',
+    hasLightning: false,
+    skyColors: ['#241812', '#170f0b', '#050302'],
+    images: {
+      background: '/images/fireplace-background.png',
+      foreground: '/images/fireplace-foreground.png',
+    },
+    sounds: {},
+    emitters: [{ type: 'fire', xPercent: 50.8, yPercent: 78.4 }],
+  },
   'desert-wind': {
     id: 'desert-wind',
     name: 'Vent du désert',
@@ -163,7 +178,7 @@ export const ambiances: Record<string, Ambiance> = {
 
 // Ids shown as cards on the home screen — everything else stays reachable
 // directly via /#/<id> but isn't advertised there.
-const HOME_IDS = ['car-rain', 'forest-rain', 'dome', 'mountains', 'christmas'];
+const HOME_IDS = ['car-rain', 'forest-rain', 'dome', 'mountains', 'christmas', 'fireplace'];
 
 export function getAmbiance(id: string): Ambiance | null {
   return Object.prototype.hasOwnProperty.call(ambiances, id) ? ambiances[id] : null;

@@ -324,6 +324,303 @@ body:has(#scene) {
   }
 }
 
+/* Fireplace flame — a bed of embers under five teardrop tongues (two
+   outer ones splayed and tilted outward, a wide soft back flame, a mid
+   layer, a small near-white core), anchored at a shared base point. Each
+   tongue flickers on its own irregular, unsynchronized keyframe so the
+   whole thing never reads as one shape breathing in and out — the outer
+   tongues in particular drift independently so the silhouette keeps
+   reshaping the way a real multi-log fire does, not just one candle
+   flame scaled up. Screen-blended so the core and the glow behind it
+   brighten what's under them like real flame light, instead of sitting
+   on top as flat color. Embers drift up out of the same base point and
+   burn out before reaching the flame tips. */
+.emitter.fire {
+  z-index: 3;
+}
+.emitter.fire .fire-glow {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 220px;
+  height: 200px;
+  border-radius: 50%;
+  transform: translate(-50%, -42%);
+  background: radial-gradient(circle, rgba(255, 150, 40, 0.55) 0%, rgba(255, 90, 20, 0.24) 45%, rgba(255, 60, 10, 0) 75%);
+  filter: blur(4px);
+  mix-blend-mode: screen;
+  animation: fire-glow-pulse 1.7s ease-in-out infinite;
+}
+.emitter.fire .ember-bed {
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  width: 90px;
+  height: 20px;
+  border-radius: 50%;
+  transform: translate(-50%, 0);
+  background: radial-gradient(ellipse, rgba(255, 140, 30, 0.8) 0%, rgba(255, 70, 10, 0.4) 55%, rgba(255, 40, 0, 0) 80%);
+  filter: blur(2px);
+  animation: ember-bed-glow 2.4s ease-in-out infinite;
+}
+.emitter.fire .flame-body {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%;
+  transform-origin: 50% 100%;
+}
+.emitter.fire .flame-body.left {
+  width: 26px;
+  height: 58px;
+  transform: translate(calc(-50% - 20px), 0) rotate(-14deg);
+  background: linear-gradient(to top, #d81e00 0%, #ff7a00 55%, rgba(255, 122, 0, 0) 100%);
+  filter: blur(2px);
+  opacity: 0.75;
+  animation: flame-flicker-left 1.8s ease-in-out infinite;
+  animation-delay: -0.9s;
+}
+.emitter.fire .flame-body.right {
+  width: 24px;
+  height: 52px;
+  transform: translate(calc(-50% + 18px), 0) rotate(13deg);
+  background: linear-gradient(to top, #d81e00 0%, #ff7a00 55%, rgba(255, 122, 0, 0) 100%);
+  filter: blur(2px);
+  opacity: 0.75;
+  animation: flame-flicker-right 2s ease-in-out infinite;
+  animation-delay: -1.3s;
+}
+.emitter.fire .flame-body.back {
+  width: 54px;
+  height: 92px;
+  transform: translate(-50%, 0);
+  background: linear-gradient(to top, #d81e00 0%, #ff7a00 55%, rgba(255, 122, 0, 0) 100%);
+  filter: blur(3px);
+  opacity: 0.85;
+  animation: flame-flicker-back 2.1s ease-in-out infinite;
+}
+.emitter.fire .flame-body.mid {
+  width: 34px;
+  height: 72px;
+  transform: translate(-50%, 0);
+  background: linear-gradient(to top, #ff6a00 0%, #ffb300 60%, rgba(255, 200, 60, 0) 100%);
+  filter: blur(1.5px);
+  opacity: 0.9;
+  animation: flame-flicker-mid 1.5s ease-in-out infinite;
+  animation-delay: -0.4s;
+}
+.emitter.fire .flame-body.core {
+  width: 16px;
+  height: 44px;
+  transform: translate(-50%, 0);
+  background: linear-gradient(to top, #fff3c4 0%, #ffd54a 40%, rgba(255, 213, 74, 0) 100%);
+  opacity: 0.95;
+  mix-blend-mode: screen;
+  animation: flame-flicker-core 0.9s ease-in-out infinite;
+  animation-delay: -0.15s;
+}
+@keyframes ember-bed-glow {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: translate(-50%, 0) scaleX(1);
+  }
+  40% {
+    opacity: 0.95;
+    transform: translate(-50%, 0) scaleX(1.08);
+  }
+  70% {
+    opacity: 0.65;
+    transform: translate(-50%, 0) scaleX(0.94);
+  }
+}
+@keyframes flame-flicker-left {
+  0%,
+  100% {
+    transform: translate(calc(-50% - 20px), 0) rotate(-14deg) scaleY(1) scaleX(1);
+    opacity: 0.7;
+  }
+  22% {
+    transform: translate(calc(-50% - 24px), 0) rotate(-20deg) scaleY(1.12) scaleX(0.88);
+    opacity: 0.85;
+  }
+  46% {
+    transform: translate(calc(-50% - 16px), 0) rotate(-8deg) scaleY(0.85) scaleX(1.05);
+    opacity: 0.6;
+  }
+  68% {
+    transform: translate(calc(-50% - 22px), 0) rotate(-18deg) scaleY(1.05) scaleX(0.92);
+    opacity: 0.8;
+  }
+  85% {
+    transform: translate(calc(-50% - 18px), 0) rotate(-11deg) scaleY(0.94) scaleX(1);
+    opacity: 0.68;
+  }
+}
+@keyframes flame-flicker-right {
+  0%,
+  100% {
+    transform: translate(calc(-50% + 18px), 0) rotate(13deg) scaleY(1) scaleX(1);
+    opacity: 0.72;
+  }
+  18% {
+    transform: translate(calc(-50% + 23px), 0) rotate(19deg) scaleY(0.88) scaleX(1.08);
+    opacity: 0.6;
+  }
+  42% {
+    transform: translate(calc(-50% + 14px), 0) rotate(7deg) scaleY(1.15) scaleX(0.86);
+    opacity: 0.85;
+  }
+  64% {
+    transform: translate(calc(-50% + 21px), 0) rotate(17deg) scaleY(0.92) scaleX(1.02);
+    opacity: 0.65;
+  }
+  88% {
+    transform: translate(calc(-50% + 16px), 0) rotate(10deg) scaleY(1.06) scaleX(0.95);
+    opacity: 0.78;
+  }
+}
+@keyframes fire-glow-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translate(-50%, -46%) scale(1);
+  }
+  30% {
+    opacity: 0.75;
+    transform: translate(-50%, -46%) scale(1.08);
+  }
+  50% {
+    opacity: 0.5;
+    transform: translate(-50%, -46%) scale(0.95);
+  }
+  75% {
+    opacity: 0.68;
+    transform: translate(-50%, -46%) scale(1.05);
+  }
+}
+@keyframes flame-flicker-back {
+  0%,
+  100% {
+    transform: translate(-50%, 0) scaleY(1) scaleX(1) skewX(0deg);
+    opacity: 0.8;
+  }
+  20% {
+    transform: translate(-50%, 0) scaleY(1.08) scaleX(0.92) skewX(-4deg);
+    opacity: 0.9;
+  }
+  38% {
+    transform: translate(-50%, 0) scaleY(0.9) scaleX(1.05) skewX(3deg);
+    opacity: 0.75;
+  }
+  55% {
+    transform: translate(-50%, 0) scaleY(1.05) scaleX(0.95) skewX(-2deg);
+    opacity: 0.88;
+  }
+  70% {
+    transform: translate(-50%, 0) scaleY(0.95) scaleX(1.02) skewX(4deg);
+    opacity: 0.8;
+  }
+  85% {
+    transform: translate(-50%, 0) scaleY(1.1) scaleX(0.9) skewX(-3deg);
+    opacity: 0.92;
+  }
+}
+@keyframes flame-flicker-mid {
+  0%,
+  100% {
+    transform: translate(-50%, 0) scaleY(1) scaleX(1) skewX(0deg);
+    opacity: 0.85;
+  }
+  15% {
+    transform: translate(-50%, 0) scaleY(0.92) scaleX(1.06) skewX(3deg);
+    opacity: 0.95;
+  }
+  33% {
+    transform: translate(-50%, 0) scaleY(1.1) scaleX(0.9) skewX(-5deg);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(-50%, 0) scaleY(0.96) scaleX(1) skewX(2deg);
+    opacity: 0.9;
+  }
+  68% {
+    transform: translate(-50%, 0) scaleY(1.12) scaleX(0.88) skewX(-3deg);
+    opacity: 0.78;
+  }
+  84% {
+    transform: translate(-50%, 0) scaleY(0.94) scaleX(1.04) skewX(4deg);
+    opacity: 0.92;
+  }
+}
+@keyframes flame-flicker-core {
+  0%,
+  100% {
+    transform: translate(-50%, 0) scaleY(1) scaleX(1) skewX(0deg);
+    opacity: 0.9;
+  }
+  25% {
+    transform: translate(-50%, 0) scaleY(0.88) scaleX(1.1) skewX(-4deg);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, 0) scaleY(1.12) scaleX(0.9) skewX(5deg);
+    opacity: 0.85;
+  }
+  75% {
+    transform: translate(-50%, 0) scaleY(0.94) scaleX(1.02) skewX(-3deg);
+    opacity: 0.95;
+  }
+}
+.emitter.fire .ember {
+  position: absolute;
+  left: 0;
+  bottom: 6px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff2c2, #ff9d2e);
+  box-shadow: 0 0 4px 1px rgba(255, 150, 40, 0.8);
+  opacity: 0;
+  animation: ember-rise 2.6s ease-in infinite;
+}
+.emitter.fire .ember:nth-child(9) {
+  left: -8px;
+  animation-duration: 3.1s;
+  animation-delay: -0.6s;
+}
+.emitter.fire .ember:nth-child(10) {
+  left: 7px;
+  animation-duration: 2.3s;
+  animation-delay: -1.4s;
+}
+.emitter.fire .ember:nth-child(11) {
+  left: -4px;
+  animation-duration: 2.9s;
+  animation-delay: -2s;
+}
+.emitter.fire .ember:nth-child(12) {
+  left: 10px;
+  animation-duration: 2.5s;
+  animation-delay: -0.9s;
+}
+@keyframes ember-rise {
+  0% {
+    transform: translate(-50%, 0) scale(1);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  65% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(calc(-50% + 6px), -78px) scale(0.3);
+    opacity: 0;
+  }
+}
+
 /* Camera shake on strike — sells "close lightning" viscerally. Fires once
    per strike (see triggerShake in scene.ts), independent of the flash's
    own per-frame alpha decay. Small amplitude (2-4px) so it reads as a jolt,
