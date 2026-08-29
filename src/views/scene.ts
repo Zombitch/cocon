@@ -64,6 +64,7 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
           <button id="menu-button" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Menu">⋮</button>
           <div id="menu-dropdown" role="menu">
             <button id="menu-eyes" type="button" role="menuitem">🌙 Fermer les yeux</button>
+            <button id="menu-thunder-mute" type="button" role="menuitem" aria-pressed="false">⚡ Couper le tonnerre</button>
             <button id="menu-fullscreen" type="button" role="menuitem">⛶ Plein écran</button>
             <button id="cast-button" type="button">📺 Caster</button>
             <a id="menu-ambiances" href="#/" role="menuitem">🏠 Ambiances</a>
@@ -123,6 +124,7 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
   const menuButton = el<HTMLButtonElement>('menu-button');
   const menuDropdown = el<HTMLElement>('menu-dropdown');
   const menuEyes = el<HTMLButtonElement>('menu-eyes');
+  const menuThunderMute = el<HTMLButtonElement>('menu-thunder-mute');
   const menuFullscreen = el<HTMLButtonElement>('menu-fullscreen');
 
   const menu = setupMenu(menuButton, menuDropdown);
@@ -196,6 +198,18 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
   }
   muteButton.addEventListener('click', () => setMuted(!muted));
 
+  // Independent of the overall mute — silences only the accent (thunder)
+  // sounds, leaving the ambiance loop untouched. Tracked separately from
+  // AudioEngine for the same reason as `muted` above.
+  let thunderMuted = false;
+  function setThunderMuted(value: boolean): void {
+    thunderMuted = value;
+    audio?.setThunderMuted(thunderMuted);
+    menuThunderMute.textContent = thunderMuted ? '⚡ Réactiver le tonnerre' : '⚡ Couper le tonnerre';
+    menuThunderMute.setAttribute('aria-pressed', String(thunderMuted));
+  }
+  menuThunderMute.addEventListener('click', () => setThunderMuted(!thunderMuted));
+
   function startExperience(): void {
     startOverlay.classList.add('hidden');
     vignetteEl.classList.add('breathe-in');
@@ -204,6 +218,7 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
 
     audio = new AudioEngine();
     audio.setMuted(muted);
+    audio.setThunderMuted(thunderMuted);
     if (ambiance.sounds.accent) void audio.loadAccent(ambiance.sounds.accent);
     if (ambiance.sounds.loop) {
       // Picked once per session — reload or re-enter the ambiance to reroll.

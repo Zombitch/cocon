@@ -9,13 +9,19 @@ import { lerp3 } from '../engine/particles';
 export class AudioEngine {
   private ctx: AudioContext;
   private masterGain: GainNode;
+  private accentGain: GainNode;
   private accentBuffers: AudioBuffer[] = [];
   private loopGainNode: GainNode | null = null;
   private loopSourceNode: AudioBufferSourceNode | null = null;
   private muted = false;
+  private thunderMuted = false;
 
   get isMuted(): boolean {
     return this.muted;
+  }
+
+  get isThunderMuted(): boolean {
+    return this.thunderMuted;
   }
 
   // Mutes everything at once (loop + accents) via the shared master gain,
@@ -25,12 +31,22 @@ export class AudioEngine {
     this.masterGain.gain.value = muted ? 0 : 1;
   }
 
+  // Separate from setMuted: routes only accent (thunder) sounds through
+  // their own gain node so this can be toggled independently of the loop.
+  setThunderMuted(muted: boolean): void {
+    this.thunderMuted = muted;
+    this.accentGain.gain.value = muted ? 0 : 1;
+  }
+
   constructor() {
     const Ctor = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     this.ctx = new Ctor();
     this.masterGain = this.ctx.createGain();
     this.masterGain.gain.value = 1;
     this.masterGain.connect(this.ctx.destination);
+    this.accentGain = this.ctx.createGain();
+    this.accentGain.gain.value = 1;
+    this.accentGain.connect(this.masterGain);
   }
 
   get state(): AudioContextState {
@@ -72,7 +88,7 @@ export class AudioEngine {
   // distanceFactor: 0 = right overhead, 1 = far away. Farther sounds
   // quieter/duller (air absorbs high frequencies over distance).
   playAccent(distanceFactor: number, pan: number): void {
-    if (!this.accentBuffers.length || this.muted) return;
+    if (!this.accentBuffers.length || this.muted || this.thunderMuted) return;
 
     const source = this.ctx.createBufferSource();
     source.buffer = this.accentBuffers[Math.floor(Math.random() * this.accentBuffers.length)];
@@ -96,7 +112,7 @@ export class AudioEngine {
     }
 
     node.connect(gainNode);
-    gainNode.connect(this.masterGain);
+    gainNode.connect(this.accentGain);
     source.start();
   }
 
