@@ -220,11 +220,7 @@ export function renderScene(root: HTMLElement, ambiance: Ambiance): () => void {
     audio.setMuted(muted);
     audio.setThunderMuted(thunderMuted);
     if (ambiance.sounds.accent) void audio.loadAccent(ambiance.sounds.accent);
-    if (ambiance.sounds.loop) {
-      // Picked once per session — reload or re-enter the ambiance to reroll.
-      const loopUrl = ambiance.sounds.loop[Math.floor(Math.random() * ambiance.sounds.loop.length)];
-      void audio.startLoop(loopUrl);
-    }
+    if (ambiance.sounds.loop) void audio.startLoop(ambiance.sounds.loop);
     audio.applyIntensity(intensity);
 
     if (ambiance.hasLightning) lightning.scheduleNext();

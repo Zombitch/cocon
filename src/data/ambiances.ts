@@ -77,7 +77,7 @@ export const ambiances: Record<string, Ambiance> = {
       foreground: '/images/dome-foreground.png',
     },
     sounds: {
-      loop: ['/audio/rain-fx-inside-car.wav'],
+      loop: ['/audio/rain-tent.mp3'],
       accent: ['/audio/boomy-thunder-shock.wav', '/audio/thunder-clap.mp3', '/audio/thunder-strike.mp3', '/audio/thunder-loud.mp3'],
     },
     emitters: [
@@ -106,9 +106,47 @@ export const ambiances: Record<string, Ambiance> = {
       foreground: '/images/mountains-tent-foreground.png',
     },
     sounds: {
+      loop: ['/audio/wind-blow.mp3', '/audio/rain-tent.mp3'],
+      accent: ['/audio/boomy-thunder-shock.wav', '/audio/thunder-clap.mp3', '/audio/thunder-strike.mp3', '/audio/thunder-loud.mp3'],
+    },
+  },
+  christmas: {
+    id: 'christmas',
+    name: 'Nuit de Noël',
+    cardText: 'Un fauteuil douillet, le sapin illuminé, la neige qui tombe dehors.',
+    caption: 'Le feu crépite, les guirlandes scintillent, la neige tombe sans bruit.',
+    particleType: 'rain',
+    hasLightning: true,
+    skyColors: ['#3a4a68', '#1c2438', '#05070d'],
+    images: {
+      background: '/images/christmas-background.png',
+      foreground: '/images/christmas-foreground.png',
+    },
+    sounds: {
       loop: ['/audio/rain-fx-inside-car.wav'],
       accent: ['/audio/boomy-thunder-shock.wav', '/audio/thunder-clap.mp3', '/audio/thunder-strike.mp3', '/audio/thunder-loud.mp3'],
     },
+    emitters: [
+      { type: 'steam', xPercent: 68.6, yPercent: 75.4 },
+      { type: 'flicker', xPercent: 83.2, yPercent: 78 },
+      { type: 'flicker', xPercent: 10, yPercent: 9.9 },
+      { type: 'flicker', xPercent: 12.8, yPercent: 34.7 },
+      // Mantel garland (horizontal strand above the stockings)
+      { type: 'flicker', xPercent: 29.9, yPercent: 13.9 },
+      { type: 'flicker', xPercent: 39.3, yPercent: 14.4 },
+      { type: 'flicker', xPercent: 44.1, yPercent: 11.9 },
+      { type: 'flicker', xPercent: 48.8, yPercent: 14.4 },
+      // Vertical garland down the window's right frame
+      { type: 'flicker', xPercent: 48.0, yPercent: 2.0 },
+      { type: 'flicker', xPercent: 50.2, yPercent: 9.4 },
+      { type: 'flicker', xPercent: 49.9, yPercent: 26.8 },
+      { type: 'flicker', xPercent: 47.2, yPercent: 34.7 },
+      { type: 'flicker', xPercent: 46.9, yPercent: 50.6 },
+      { type: 'flicker', xPercent: 49.4, yPercent: 59.5 },
+      // Pine sprig by the candle, bottom right of the sill
+      { type: 'flicker', xPercent: 75.9, yPercent: 72.4 },
+      { type: 'flicker', xPercent: 97.7, yPercent: 81.3 },
+    ],
   },
   'desert-wind': {
     id: 'desert-wind',
@@ -125,7 +163,7 @@ export const ambiances: Record<string, Ambiance> = {
 
 // Ids shown as cards on the home screen — everything else stays reachable
 // directly via /#/<id> but isn't advertised there.
-const HOME_IDS = ['car-rain', 'forest-rain', 'dome', 'mountains'];
+const HOME_IDS = ['car-rain', 'forest-rain', 'dome', 'mountains', 'christmas'];
 
 export function getAmbiance(id: string): Ambiance | null {
   return Object.prototype.hasOwnProperty.call(ambiances, id) ? ambiances[id] : null;

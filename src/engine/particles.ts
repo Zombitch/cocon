@@ -32,11 +32,33 @@ interface Ripple {
 interface Snowflake {
   x: number;
   y: number;
-  r: number;
+  size: number; // base size before perspective scale
   speed: number;
-  swayPhase: number;
-  swaySpeed: number;
-  swayAmount: number;
+  originX: number; // offset from the vanishing point, same 'front' trick as rain
+  wobblePhase: number;
+  wobbleAmp: number;
+  rotation: number;
+  rotationSpeed: number;
+}
+
+// A brief puff of flurries where a flake lands, mirroring rain's ripple
+// splash but with specks that drift instead of a ring that expands.
+interface SnowSplash {
+  x: number;
+  y: number;
+  size: number;
+  age: number;
+  life: number;
+  specks: { angle: number; speed: number }[];
+}
+
+// Frost creeping in from the window's corners — a fixed pattern generated
+// once per resize, not simulated, since real window frost doesn't move.
+interface FrostPatch {
+  x: number;
+  y: number;
+  r: number;
+  alpha: number;
 }
 
 interface WindStreak {
@@ -48,7 +70,7 @@ interface WindStreak {
 }
 
 const DROP_COUNT = 220;
-const SNOW_COUNT = 160;
+const SNOW_COUNT = 340;
 const WIND_COUNT = 140;
 
 export class ParticleSystem {
@@ -59,6 +81,8 @@ export class ParticleSystem {
   private drops: Drop[] = [];
   private ripples: Ripple[] = [];
   private snowflakes: Snowflake[] = [];
+  private snowSplashes: SnowSplash[] = [];
+  private frostPatches: FrostPatch[] = [];
   private windStreaks: WindStreak[] = [];
 
   constructor(type: ParticleType, direction: WindDirection = 'front') {
@@ -75,6 +99,10 @@ export class ParticleSystem {
     if (this.snowflakes.length === 0 && this.type === 'snow') {
       for (let i = 0; i < SNOW_COUNT; i++) this.snowflakes.push(this.makeSnowflake());
     }
+    // Corner positions are size-dependent, so this is rebuilt on every
+    // resize rather than once — real frost wouldn't jump around on rotate,
+    // but here it's cheaper and simpler than reprojecting the old pattern.
+    if (this.type === 'snow') this.buildFrost();
     if (this.windStreaks.length === 0 && this.type === 'wind') {
       for (let i = 0; i < WIND_COUNT; i++) this.windStreaks.push(this.makeWindStreak());
     }
@@ -107,11 +135,13 @@ export class ParticleSystem {
     return {
       x: Math.random() * this.width,
       y: Math.random() * this.height,
-      r: 1.5 + Math.random() * 2.5,
-      speed: 30 + Math.random() * 45,
-      swayPhase: Math.random() * Math.PI * 2,
-      swaySpeed: 0.5 + Math.random() * 1,
-      swayAmount: 10 + Math.random() * 22,
+      size: 2 + Math.random() * 3.5,
+      speed: 26 + Math.random() * 42,
+      originX: (Math.random() - 0.5) * this.width,
+      wobblePhase: Math.random() * Math.PI * 2,
+      wobbleAmp: 6 + Math.random() * 14,
+      rotation: Math.random() * Math.PI * 2,
+      rotationSpeed: (Math.random() - 0.5) * 1.2,
     };
   }
 
@@ -294,23 +324,161 @@ export class ParticleSystem {
     }
   }
 
-  private updateAndDrawSnow(ctx: CanvasRenderingContext2D, dt: number, intensity: number): void {
-    const speedFactor = lerp3(0.5, 1, 2, intensity);
-    for (const f of this.snowflakes) {
-      f.y += f.speed * speedFactor * dt;
-      f.swayPhase += f.swaySpeed * dt;
-      const x = f.x + Math.sin(f.swayPhase) * f.swayAmount;
-
+  // A hex ice crystal: 6 spokes from the center, each with a pair of side
+  // branches near the tip, plus a bright center glint. Only worth drawing
+  // once a flake is big enough (close enough, per the 'front' scale) for
+  // the arms to actually resolve — see the size check in updateAndDrawSnow.
+  private drawSnowCrystal(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, rotation: number, alpha: number): void {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+    ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+    ctx.lineWidth = Math.max(0.6, r * 0.16);
+    ctx.lineCap = 'round';
+    for (let i = 0; i < 6; i++) {
+      ctx.rotate(Math.PI / 3);
       ctx.beginPath();
-      ctx.arc(x, f.y, f.r, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-      ctx.fill();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, -r);
+      ctx.moveTo(0, -r * 0.55);
+      ctx.lineTo(r * 0.28, -r * 0.75);
+      ctx.moveTo(0, -r * 0.55);
+      ctx.lineTo(-r * 0.28, -r * 0.75);
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.16, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+    ctx.fill();
+    ctx.restore();
+  }
 
-      if (f.y - f.r > this.height) {
-        f.y = -f.r;
-        f.x = Math.random() * this.width;
+  // Bottom-of-fall puff: a handful of specks flick outward from the
+  // landing point and drift up slightly before fading, rather than a rain
+  // ripple's expanding ring — snow doesn't splash, it puffs.
+  private spawnSnowSplash(x: number, y: number, size: number): void {
+    const speckCount = 4 + Math.floor(Math.random() * 3);
+    const specks: { angle: number; speed: number }[] = [];
+    for (let i = 0; i < speckCount; i++) {
+      specks.push({ angle: Math.random() * Math.PI * 2, speed: 12 + Math.random() * 22 });
+    }
+    this.snowSplashes.push({ x, y, size, age: 0, life: 0.45 + Math.random() * 0.25, specks });
+    if (this.snowSplashes.length > 80) this.snowSplashes.shift();
+  }
+
+  private updateAndDrawSnowSplashes(ctx: CanvasRenderingContext2D, dt: number): void {
+    for (let i = this.snowSplashes.length - 1; i >= 0; i--) {
+      const s = this.snowSplashes[i];
+      s.age += dt;
+      if (s.age >= s.life) {
+        this.snowSplashes.splice(i, 1);
+        continue;
+      }
+      const t = s.age / s.life; // 0 at spawn -> 1 as it fades out
+      const alpha = (1 - t) * 0.7;
+      for (const speck of s.specks) {
+        const dist = speck.speed * s.age;
+        const px = s.x + Math.cos(speck.angle) * dist;
+        const py = s.y + Math.sin(speck.angle) * dist * 0.5 - t * 6;
+        ctx.beginPath();
+        ctx.arc(px, py, Math.max(0.4, s.size * 0.18 * (1 - t)), 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+        ctx.fill();
       }
     }
+  }
+
+  // Fixed pattern of soft blobs biased toward each corner, denser and
+  // brighter the closer they sit to it — a cheap stand-in for the way
+  // frost fans out from a window's edges instead of covering it evenly.
+  private buildFrost(): void {
+    this.frostPatches = [];
+    const reach = Math.min(this.width, this.height) * 0.42;
+    const corners = [
+      { cx: 0, cy: 0, sx: 1, sy: 1 },
+      { cx: this.width, cy: 0, sx: -1, sy: 1 },
+      { cx: 0, cy: this.height, sx: 1, sy: -1 },
+      { cx: this.width, cy: this.height, sx: -1, sy: -1 },
+    ];
+    for (const c of corners) {
+      for (let i = 0; i < 30; i++) {
+        const dist = Math.pow(Math.random(), 1.7) * reach;
+        const spread = Math.pow(Math.random(), 1.3) * reach * 0.7;
+        const x = c.cx + c.sx * dist;
+        const y = c.cy + c.sy * spread;
+        const fromCorner = Math.hypot(x - c.cx, y - c.cy);
+        const falloff = Math.max(0, 1 - fromCorner / reach);
+        this.frostPatches.push({
+          x,
+          y,
+          r: 6 + Math.random() * 26 * falloff,
+          alpha: 0.05 + falloff * 0.35,
+        });
+      }
+    }
+  }
+
+  // Drawn on top of the falling snow, like frost sitting on the near face
+  // of the glass with the weather behind it. Transparent throughout (see
+  // FrostPatch.alpha) so it reads as icy buildup, not an opaque border.
+  private drawFrost(ctx: CanvasRenderingContext2D): void {
+    if (!this.frostPatches.length) return;
+    ctx.save();
+    ctx.filter = 'blur(2px)';
+    for (const p of this.frostPatches) {
+      const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+      grad.addColorStop(0, `rgba(225, 240, 255, ${p.alpha})`);
+      grad.addColorStop(1, 'rgba(225, 240, 255, 0)');
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  private updateAndDrawSnow(ctx: CanvasRenderingContext2D, dt: number, intensity: number): void {
+    this.updateAndDrawSnowSplashes(ctx, dt);
+
+    const speedFactor = lerp3(0.5, 1, 2, intensity);
+    const windFactor = lerp3(0.2, 1, 3, intensity);
+    const vpX = this.width / 2;
+
+    for (const f of this.snowflakes) {
+      // Same 'front' technique as rain: flakes spawn at a full-width offset
+      // from a center vanishing point and grow as they approach, faking
+      // depth instead of just drifting at a constant size.
+      const t = Math.max(0, Math.min(1, f.y / this.height));
+      const scale = 0.35 + t * t * 0.9;
+      const posScale = 1 + t * 0.5;
+
+      f.y += f.speed * speedFactor * (0.5 + scale) * dt;
+      f.x = vpX + f.originX * posScale;
+      f.x += Math.sin(f.y * 0.015 + f.wobblePhase) * f.wobbleAmp * windFactor * (0.2 + t * 0.6);
+      f.rotation += f.rotationSpeed * dt;
+
+      const r = f.size * scale;
+      const alpha = 0.35 + t * 0.5;
+
+      if (r < 2.2) {
+        // Too small/far for the crystal arms to read — a soft dot instead.
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.8})`;
+        ctx.fill();
+      } else {
+        this.drawSnowCrystal(ctx, f.x, f.y, r, f.rotation, alpha);
+      }
+
+      if (f.y - r > this.height) {
+        if (Math.random() < 0.4) this.spawnSnowSplash(f.x, this.height - 1, r);
+        f.y = -r - Math.random() * 40;
+        f.x = Math.random() * this.width;
+        f.originX = (Math.random() - 0.5) * this.width;
+      }
+    }
+
+    this.drawFrost(ctx);
   }
 
   private updateAndDrawWind(ctx: CanvasRenderingContext2D, dt: number, intensity: number): void {
