@@ -160,7 +160,7 @@ export const ambiances: Record<string, Ambiance> = {
       background: '/images/fireplace-background.png',
       foreground: '/images/fireplace-foreground.png',
     },
-    sounds: {},
+    sounds: {loop: ['/audio/crackling-fire.mp3']},
     emitters: [{ type: 'fire', xPercent: 50.8, yPercent: 78.4 }],
   },
   'desert-wind': {
