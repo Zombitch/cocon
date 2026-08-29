@@ -123,6 +123,10 @@ body:has(#scene) {
   position: relative;
   width: 100%;
   height: 100%;
+  /* Lets .emitter.fire size itself off #scene's actual rendered box (cqmin)
+     instead of the viewport — right, since #scene is letterboxed to the
+     art's own ratio and can be smaller than the viewport on either axis. */
+  container-type: size;
 }
 /* Applied once the driving image's natural size is known (see
    renderScene) — locks #scene to the art's exact aspect ratio and sizes
@@ -337,10 +341,14 @@ body:has(#scene) {
    burn out before reaching the flame tips. */
 .emitter.fire {
   z-index: 3;
-  /* Bump this to resize the whole fire without touching each part's own
-     px dimensions — scale from the base point so it grows in place. */
-  --fire-scale: 2;
-  transform: scale(var(--fire-scale));
+  /* Scales with #scene's rendered size (cqmin, not viewport, since #scene
+     is letterboxed) so the fire stays proportional to the art on any
+     screen instead of holding a fixed px size. 720 is the baseline cqmin
+     where --fire-scale: 1 matches the flame parts' original tuned px
+     sizes; bump --fire-scale to grow/shrink the whole fire from there. */
+  --fire-scale: 1.5;
+  --fire-baseline: 720;
+  transform: scale(calc(var(--fire-scale) * (100cqmin / 1px) / var(--fire-baseline)));
   transform-origin: 50% 100%;
 }
 .emitter.fire .fire-glow {
